@@ -43,6 +43,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import { CalendarItem, DateRange, ItemType } from '@/src/types';
 
+import adminPadlock from '@/src/elements/admin_padlock.svg';
+import adminPadlockUnlock from '@/src/elements/admin_padlock_unlock.svg';
+
 const springConf = { type: "spring", stiffness: 350, damping: 30 };
 
 type Tab = 'calendar' | 'list';
@@ -66,13 +69,26 @@ const FunnelCustomIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const AdminIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 117.32279 132.29167" className={className} fill="currentColor">
-    <g transform="translate(-7.4844305)">
-      <path d="M 66.154794,-2.9318908e-6 C 41.218752,-2.9318908e-6 20.927886,20.285035 20.927886,45.227015 v 4.191944 c 0,0.70292 4.84e-4,1.394667 0.05005,2.083945 -7.72243,1.772651 -13.4935051,8.675356 -13.4935051,16.932237 v 46.465649 c 0,9.60645 7.7868421,17.39088 17.3924931,17.39088 h 82.539436 c 9.60565,0 17.39088,-7.78572 17.39088,-17.39088 V 68.435141 c 0,-8.263065 -5.76446,-15.162814 -13.48689,-16.932237 h 0.0242 c 0.0339,-0.690763 0.0468,-1.383754 0.0468,-2.083945 V 45.227015 C 111.39139,20.291234 91.106173,-2.9318908e-6 66.16448,-2.9318908e-6 Z M 66.153341,15.481144 v 0 h 0.0015 c 16.408826,0 29.755738,13.348656 29.755738,29.752329 v 4.190701 c 0,0.547741 -0.0452,1.083858 -0.08234,1.625416 H 36.476548 c -0.03552,-0.535859 -0.08395,-1.083858 -0.08395,-1.625416 v -4.190701 c 0,-16.409372 13.349334,-29.75157 29.752025,-29.752329 z m 0,54.251508 c 6.874371,-1.61e-4 12.447195,5.572502 12.446872,12.447031 3.23e-4,3.259195 -1.278138,6.388914 -3.560608,8.715781 0.190825,0.739083 0.29221,1.514328 0.29221,2.314436 v 11.22007 c 0,5.08462 -4.093851,9.17815 -9.178474,9.17815 -5.084461,0 -9.177022,-4.09353 -9.177022,-9.17815 V 93.2099 c 0,-0.800108 0.09848,-1.575353 0.290758,-2.314436 -2.282309,-2.326867 -3.560608,-5.456586 -3.560608,-8.715781 0,-6.874529 5.572662,-12.447192 12.446872,-12.447031 z" />
-    </g>
-  </svg>
-);
+const AdminIcon = ({ className, unlocked }: { className?: string; unlocked?: boolean }) => {
+  if (unlocked) {
+    return <img src={adminPadlockUnlock} className={className} alt="Unlocked" />;
+  }
+  return (
+    <div 
+      className={cn(className, "bg-current")} 
+      style={{ 
+        maskImage: `url(${adminPadlock})`, 
+        WebkitMaskImage: `url(${adminPadlock})`,
+        maskSize: 'contain',
+        WebkitMaskSize: 'contain',
+        maskRepeat: 'no-repeat',
+        WebkitMaskRepeat: 'no-repeat',
+        maskPosition: 'center',
+        WebkitMaskPosition: 'center'
+      }} 
+    />
+  );
+};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar');
@@ -112,6 +128,7 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [editingItem, setEditingItem] = useState<CalendarItem | null>(null);
   const [selectedModalidade, setSelectedModalidade] = useState<string>('');
+  const [formTitle, setFormTitle] = useState<string>('');
 
   useEffect(() => { 
     localStorage.setItem('smd_theme', JSON.stringify(darkMode)); 
@@ -206,6 +223,7 @@ export default function App() {
     setSelectedDate(item ? item.date : date);
     setEditingItem(item || null);
     setSelectedModalidade(item?.modalidade || '');
+    setFormTitle(item?.title || '');
     setIsModalOpen(true);
   };
 
@@ -219,7 +237,7 @@ export default function App() {
             <CalendarHeaderIcon className="h-6 sm:h-7 w-auto" />
           </h1>
           <div className="flex items-center gap-2 lg:gap-3 overflow-x-auto no-scrollbar">
-            <div className="flex gap-1.5 lg:gap-2 bg-muted p-1 rounded-full flex-shrink-0">
+            <div className={cn("flex gap-1.5 lg:gap-2 p-1 rounded-full flex-shrink-0", darkMode ? "bg-muted" : "bg-[#E2E2E2]")}>
                 {(['DAY', 'MONTH', 'YEAR'] as const).map(mode => (
                   <button
                     key={mode}
@@ -271,12 +289,12 @@ export default function App() {
                 }
               }}
               className={cn(
-                "w-[30px] h-[30px] rounded-full transition-transform flex items-center justify-center shrink-0 hover:scale-105 active:scale-95",
-                isAdmin ? "text-primary shadow-sm" : "text-muted-foreground opacity-50 hover:opacity-100"
+                "w-[30px] h-[30px] transition-transform flex items-center justify-center shrink-0 hover:scale-105 active:scale-95",
+                isAdmin ? "text-primary" : "text-muted-foreground opacity-50 hover:opacity-100"
               )}
               title="Modo Administrador"
             >
-              <AdminIcon className="w-[18px] h-[18px]" />
+              <AdminIcon className="w-[20px] h-[20px]" unlocked={isAdmin} />
             </button>
           </div>
         </div>
@@ -294,7 +312,7 @@ export default function App() {
                   {viewMode === 'YEAR' && selectedMonthInYearView && (
                     <button 
                       onClick={() => setSelectedMonthInYearView(null)}
-                      className="p-1 pr-2 transition-colors text-white hover:text-primary"
+                      className="p-1 pr-2 transition-colors text-primary"
                     >
                       <ChevronLeft className="w-6 h-6" />
                     </button>
@@ -305,8 +323,8 @@ export default function App() {
                 </div>
                 {viewMode === 'YEAR' && selectedMonthInYearView && (
                    <span className={cn(
-                     "text-sm font-bold text-muted-foreground uppercase tracking-widest px-3 py-1 rounded-full",
-                     darkMode ? "bg-[#121212]" : "bg-muted"
+                     "text-sm font-bold uppercase tracking-widest px-3 py-1 rounded-full",
+                     darkMode ? "bg-[#1C1C1E] text-[#FFFFFF]" : "bg-[#E2E2E2] text-muted-foreground"
                    )}>
                      {format(selectedMonthInYearView, 'yyyy')}
                    </span>
@@ -330,7 +348,7 @@ export default function App() {
                       className={cn(
                         "p-6 rounded-3xl border transition-all text-left group relative overflow-hidden",
                         isCurrentMonth 
-                          ? "bg-primary/5 border-primary shadow-[0_0_15px_rgba(0,255,0,0.1)]" 
+                          ? "bg-card border-primary" 
                           : "bg-card border-border hover:border-primary/50 hover:shadow-md"
                       )}
                     >
@@ -338,10 +356,10 @@ export default function App() {
                         <h3 className="text-xl font-display font-bold uppercase tracking-tight text-foreground group-hover:text-primary transition-colors">
                           {format(month, 'MMMM', { locale: ptBR })}
                         </h3>
-                        <span className={cn(
-                          "text-xs font-bold text-muted-foreground px-2 py-1 rounded-full",
-                          darkMode ? "bg-[#121212]" : "bg-muted"
-                        )}>
+                         <span className={cn(
+                           "text-xs font-bold text-muted-foreground px-2 py-1 rounded-full",
+                           darkMode ? "bg-[#121212]" : "bg-muted"
+                         )}>
                           {format(month, 'yyyy')}
                         </span>
                       </div>
@@ -418,7 +436,10 @@ export default function App() {
                       {(() => {
                         const dayItems = items.filter(i => isSameDay(i.date, monday));
                         return dayItems.length === 0 ? (
-                          <div className="p-6 rounded-2xl border border-dashed border-border text-xs uppercase tracking-widest text-muted-foreground font-bold text-center">
+                          <div className={cn(
+                            "p-6 rounded-2xl border border-dashed text-xs uppercase tracking-widest font-bold text-center",
+                            darkMode ? "border-[#C5C5C5] text-[#C5C5C5]" : "border-[#09090B] text-[#09090B]"
+                          )}>
                             Livre
                           </div>
                         ) : (
@@ -432,7 +453,7 @@ export default function App() {
                                   </p>
                                 )}
                                 <h4 className="text-base font-display font-semibold text-foreground tracking-wide">{item.title}</h4>
-                                {item.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.description}</p>}
+                                {item.description && <p className="text-sm text-muted-foreground mt-1">{item.description}</p>}
                               </div>
                               <div className="flex items-center gap-3">
                                 {(item.startTime || item.endTime) && (
@@ -472,10 +493,12 @@ export default function App() {
             {/* Stats Header with Funnel */}
             <div className="relative flex items-center justify-center mb-8 mt-4">
               <div className="flex flex-col items-center text-center">
-                <h2 className="text-2xl font-bold uppercase font-display tracking-[0.2em] text-foreground">
+                <h2 className={cn(
+                  "text-2xl font-bold uppercase font-display px-6 py-2 border-2 rounded-2xl",
+                  darkMode ? "text-primary border-primary" : "text-[#09090B] border-[#09090B]"
+                )}>
                   Estatísticas
                 </h2>
-                <div className="h-1 w-12 bg-primary rounded-full mt-2 shadow-[0_0_10px_rgba(0,255,0,0.5)]" />
               </div>
               
               <div className="absolute right-0">
@@ -546,7 +569,6 @@ export default function App() {
                   <div key={item.id} className={cn("p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-accent/50 transition-colors", index !== sortedItems.length - 1 && "border-b border-border")}>
                     <div className="w-24 shrink-0">
                       <div className="text-sm font-semibold">{format(item.date, 'dd/MM/yyyy')}</div>
-                      <div className="text-xs text-muted-foreground uppercase">{format(item.date, 'EEEE', { locale: ptBR })}</div>
                     </div>
                     <div className="flex-1">
                       {item.modalidade && (
@@ -556,11 +578,13 @@ export default function App() {
                         </div>
                       )}
                       <h4 className="font-medium text-foreground">{item.title}</h4>
-                      {item.description && <div className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{item.description}</div>}
+                      {item.description && <div className="text-sm text-muted-foreground mt-0.5">{item.description}</div>}
                     </div>
                     <div className="shrink-0 flex items-center gap-3">
                       {item.startTime && (
-                        <span className="text-xs font-mono bg-muted px-2 py-1 rounded-md">{item.startTime}</span>
+                        <span className="text-xs font-mono bg-muted px-2 py-1 rounded-md">
+                          {item.startTime}{item.startTime && item.endTime ? ' - ' : ''}{item.endTime}
+                        </span>
                       )}
                       {isAdmin && (
                         <div className="flex items-center gap-0 shrink-0 border border-border/60 rounded-full p-0.5">
@@ -631,7 +655,17 @@ export default function App() {
                     <select 
                       name="modalidade" 
                       defaultValue={editingItem?.modalidade || ""}
-                      onChange={(e) => setSelectedModalidade(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const prev = selectedModalidade;
+                        setSelectedModalidade(val);
+                        
+                        if (val === 'Prática') {
+                          setFormTitle('Atividades no Centro');
+                        } else if (prev === 'Prática' && formTitle === 'Atividades no Centro') {
+                          setFormTitle('');
+                        }
+                      }}
                       required
                       className="w-full p-2.5 text-center flex justify-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all appearance-none cursor-pointer invalid:text-sm invalid:italic invalid:text-muted-foreground/70"
                       style={{ textAlignLast: 'center' }}
@@ -655,7 +689,12 @@ export default function App() {
                   <label className="block text-center text-sm font-medium text-foreground">
                     {['Ponto Facultativo', 'Feriado'].includes(selectedModalidade) ? 'Tipo' : 'Tema'}
                   </label>
-                  <input name="title" defaultValue={editingItem?.title || ""} required className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" />
+                  <input 
+                    name="title" 
+                    value={formTitle} 
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" 
+                  />
                 </div>
                 
                 {!['Ponto Facultativo', 'Feriado'].includes(selectedModalidade) && (
@@ -724,7 +763,7 @@ export default function App() {
               </button>
 
               <div className="text-primary mb-5 flex justify-center">
-                <AdminIcon className="w-9 h-9" />
+                <AdminIcon className="w-9 h-9" unlocked={isAdmin} />
               </div>
               <h2 className="text-xl font-display font-bold uppercase tracking-widest text-foreground mb-6">Área Administrativa</h2>
               

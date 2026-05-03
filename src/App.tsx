@@ -72,7 +72,7 @@ export default function App() {
 
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('smd_theme');
-    return saved ? JSON.parse(saved) : true;
+    return saved ? JSON.parse(saved) : false;
   });
   
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -1229,7 +1229,7 @@ export default function App() {
       {/* Auth Modal (Custom In-App Password Area) */}
       <AnimatePresence>
         {isAuthModalOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[60] flex flex-col items-center justify-start p-4 pt-4">
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsAuthModalOpen(false)}
@@ -1239,7 +1239,7 @@ export default function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="relative w-full max-w-[300px] bg-card border border-border p-6 pt-10 rounded-[40px] shadow-2xl text-center"
+              className="relative w-full max-w-[300px] bg-card border border-border p-4 pt-6 rounded-[40px] shadow-2xl text-center"
             >
               {/* Back Button */}
               <button 

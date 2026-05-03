@@ -5,11 +5,13 @@ export interface CalendarItem {
   title: string;
   date: Date;
   type: ItemType;
+  category?: 'checklist' | 'responsavel' | 'orientacao';
   startTime?: string;
   endTime?: string;
   description?: string;
   modalidade?: string;
   completed?: boolean;
+  order?: number;
 }
 
 export interface DateRange {

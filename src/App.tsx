@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+// Refined visual theme and updated assets
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   format, 
   eachDayOfInterval, 
@@ -8,14 +9,14 @@ import {
   endOfMonth,
   isSameDay,
   parseISO,
-  isValid,
   isAfter,
   nextMonday,
   startOfYear,
   endOfYear,
   eachMonthOfInterval,
-  differenceInDays,
-  compareAsc
+  startOfWeek,
+  eachWeekOfInterval,
+  isSameMonth
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -26,72 +27,48 @@ import {
   ChevronDown,
   Trash,
   Pencil,
-  Settings,
-  CalendarDays,
-  List,
   Moon,
   Sun,
   Lock,
   LockOpen,
   X,
-  Filter,
-  User,
   Upload,
-  Package
+  SquareCheckBig,
+  Check,
+  Users,
+  Compass,
+  Eye,
+  EyeOff,
+  Download
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Reorder } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import { CalendarItem, DateRange, ItemType } from '@/src/types';
 
 import adminPadlock from '@/src/elements/admin_padlock.svg';
 import adminPadlockUnlock from '@/src/elements/admin_padlock_unlock.svg';
+import changeMode from '@/src/elements/change_mode.svg';
 
-const springConf = { type: "spring", stiffness: 350, damping: 30 };
 
-type Tab = 'calendar' | 'list';
+
+type Tab = 'cronograma' | 'tarefas';
 type ViewMode = 'DAY' | 'MONTH' | 'YEAR';
 
-const CalendarHeaderIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 132.29167 132.29167" className={className} fill="currentColor">
-    <path d="M 26.177701,6.0614648e-6 C 11.700109,6.0614648e-6 8.7646483e-7,11.699965 8.7646483e-7,26.177705 V 106.1136 C 8.7646483e-7,120.59134 11.700109,132.29167 26.177701,132.29167 h 79.936259 c 14.47759,0 26.17771,-11.70033 26.17771,-26.17807 V 26.177705 C 132.29167,11.699965 120.59155,6.0614648e-6 106.11396,6.0614648e-6 Z m 0,2.8686062385352 h 79.936259 c 12.93791,0 23.30909,10.3710507 23.30909,23.3090927 V 106.1136 c 0,12.93804 -10.37118,23.30909 -23.30909,23.30909 H 26.177701 c -12.937909,0 -23.3087253,-10.37105 -23.3087253,-23.30909 V 26.177705 c 0,-12.938042 10.3708163,-23.3090927 23.3087253,-23.3090927 z M 42.536904,20.066165 c -1.546553,0 -2.808566,1.262795 -2.808566,2.809306 v 3.921541 c 0,1.546547 1.262013,2.808566 2.808566,2.808566 h 1.227128 c 1.546503,0 2.809304,-1.262019 2.809304,-2.808566 v -1.961326 -1.960215 c 0,-1.546547 -1.262801,-2.809306 -2.809304,-2.809306 z m 53.641079,0 c -1.546531,0 -2.808565,1.262795 -2.808565,2.809306 v 3.921541 c 0,1.546547 1.262034,2.808566 2.808565,2.808566 h 1.227502 c 1.546495,0 2.809305,-1.262019 2.809305,-2.808566 v -1.961326 -1.960215 c 0,-1.546547 -1.26281,-2.809306 -2.809305,-2.809306 z m -66.946372,6.017401 c -2.045397,0 -3.711765,1.666302 -3.711765,3.711769 -0.04347,0.484075 0.09004,35.1415 -0.04966,35.640396 -0.04346,0.42384 -7.35856,23.904879 -6.724917,23.390993 l -0.02112,0.0085 c -0.244155,3.94621 2.813041,7.727478 6.729365,8.311175 6.989993,0.858139 28.891014,-1.87571 43.528683,-9.36411 h -14.0243 c 0.533828,-4.804783 1.701564,-15.356238 2.220391,-20.065795 h 20.090619 l 1.582176,14.288553 c 0.792544,-0.555174 1.567344,-1.12193 2.324165,-1.703748 -0.344705,-3.129976 -1.047264,-9.478459 -1.391309,-12.584805 h 13.549899 c 0.573785,-0.81819 1.127861,-1.645761 1.656678,-2.493903 H 79.638657 V 52.554802 h 19.836 v 12.16823 c 2.943463,1.2572 7.893153,4.005973 12.123753,9.394125 l -2.5899,-8.681053 c -0.0296,-0.119507 -0.0489,-0.239236 -0.0489,-0.358763 V 29.794964 c 0,-2.045396 -1.66126,-3.711398 -3.71177,-3.711398 H 102.698 c 0.28427,3.192941 -2.03975,6.007028 -5.302473,6.01666 h -1.227494 c -3.262665,-0.0084 -5.587539,-2.823719 -5.303215,-6.01666 H 49.056496 c 0.284289,3.192941 -2.040829,6.007028 -5.303581,6.01666 h -1.227127 c -3.262665,-0.0084 -5.58716,-2.823719 -5.302842,-6.01666 z m 5.772426,10.975569 H 54.839665 V 50.059773 H 35.004037 Z m 22.325091,0 H 77.160316 V 50.059773 H 57.329128 Z m 22.33065,0 H 99.495786 V 50.059773 H 79.659778 Z M 35.004037,52.554423 H 54.839665 V 65.221139 H 35.004037 Z m 22.325091,0 H 77.160316 V 65.221139 H 57.329128 Z m 39.832489,13.936094 v 7.17e-4 0.0022 C 92.521665,73.931458 86.170678,80.295719 78.282921,85.414378 v 0.0022 c -8.027065,5.303179 -18.83793,9.533605 -28.965502,11.758689 15.061675,-0.185014 30.178473,-0.833331 45.005237,-3.642089 2.95344,-0.553812 5.887014,-1.19213 8.805584,-1.910551 1.03272,-0.259353 2.07063,-0.508678 3.09839,-0.803138 2.40979,-0.753248 4.7145,-2.209844 6.2761,-4.095736 C 118.53787,78.90585 97.380383,66.58488 97.161617,66.490726 Z M 34.684928,67.716161 H 54.690674 C 54.146883,72.605145 53.01413,82.847454 52.470288,87.781578 H 28.692732 Z m 77.523892,22.739071 c -1.31205,1.012665 -2.77491,1.840739 -4.32143,2.42942 -16.184297,4.709577 -32.548033,6.077147 -49.510145,6.605949 -9.558392,0.278365 -20.50967,0.258692 -31.550217,0.258692 -1.67625,-0.0084 -3.352687,-0.394148 -4.844389,-1.16745 v 0.0022 c -0.194726,-0.104732 -0.388842,-0.214112 -0.57854,-0.323929 0.433939,2.100276 1.695801,4.001306 3.551659,5.198706 0.977788,0.62855 2.076366,1.03695 3.228849,1.19674 0.378894,0.0507 0.75763,0.08 1.141882,0.08 1.088107,-0.0534 75.327951,0.0971 76.530251,-0.0296 1.73616,-0.12924 3.42365,-0.86362 4.71579,-2.031 1.80605,-1.61147 2.81832,-4.021344 2.68367,-6.421015 -0.0296,-0.698497 -0.17975,-1.376426 -0.36433,-2.049902 z M 25.520585,106.52721 v 0.82315 c 0,2.68407 2.184383,4.86959 4.86848,4.86959 l 73.707235,0.005 c 2.6841,0 4.86921,-2.1851 4.86921,-4.86921 v -0.81796 c -1.1973,0.45906 -2.50528,0.69343 -3.79737,0.69825 H 29.321677 c -0.174866,0 -0.354266,-0.005 -0.533694,-0.0126 -1.112556,-0.06 -2.219841,-0.28943 -3.262579,-0.68899 z" />
-  </svg>
-);
 
-const CalendarCustomIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 138.84134 132.29167" className={className} fill="currentColor">
-    <path d="m 33.711023,0 c -3.03566,0 -5.43285,2.3971938 -5.43285,5.4328462 v 7.1896508 h -11.98277 c -4.79312,0 -9.1062998,2.077695 -12.1419498,5.432856 v 0.15942 C 1.5971432,21.090646 5.3219298e-5,24.764086 5.3219298e-5,28.918146 V 117.38495 A 14.90558,14.90558 0 0 0 14.906763,132.29167 H 123.9347 a 14.905563,14.905563 0 0 0 14.90671,-14.90672 V 28.918146 c 0,-4.15406 -1.59702,-7.8275 -4.15339,-10.703373 v -0.15942 h -0.16244 c -3.03559,-3.355161 -7.34883,-5.432856 -12.14195,-5.432856 H 110.40079 V 5.4328462 C 110.40079,2.3971938 108.0036,0 104.96794,0 h -8.147667 c -3.03566,0 -5.43279,2.3971938 -5.43279,5.4328462 v 7.1896508 h -49.24379 V 5.4328462 C 47.291363,2.3971938 44.894173,0 41.858513,0 Z m -12.23554,49.528964 h 95.728247 a 10.611789,10.611789 0 0 1 10.61287,10.612863 v 50.671043 a 10.611771,10.611771 0 0 1 -10.61287,10.61291 H 21.475483 A 10.611789,10.611789 0 0 1 10.865693,110.81287 V 60.141827 a 10.611771,10.611771 0 0 1 10.60979,-10.612863 z m 7.12413,11.502221 c -2.55632,0 -4.79313,2.076974 -4.79313,4.793127 v 8.15081 c 0,2.556313 2.07703,4.793118 4.79313,4.793118 h 13.25908 c 2.55632,0 4.79312,-2.077025 4.79312,-4.793118 v -8.15081 c 0,-2.556373 -2.2368,-4.793127 -4.79312,-4.793127 z m 34.19157,0 c -2.55631,0 -4.79312,2.076974 -4.79312,4.793127 v 8.15081 c 0,2.556313 2.07703,4.793118 4.79312,4.793118 h 13.25909 c 2.55637,0 4.79313,-2.077025 4.79313,-4.793118 v -8.15081 c 0,-2.556373 -2.23676,-4.793127 -4.79313,-4.793127 z m 34.18844,0 c -2.55637,0 -4.79312,2.076974 -4.79312,4.793127 v 8.15081 c 0,2.556313 2.07697,4.793118 4.79312,4.793118 h 13.262237 c 2.55631,0 4.79312,-2.077025 4.79312,-4.793118 v -8.15081 c 0,-2.556373 -2.23681,-4.793127 -4.79312,-4.793127 z m -68.38001,29.879004 c -2.55632,0 -4.79313,2.077035 -4.79313,4.793128 v 8.147673 c 0,2.55631 2.07703,4.79312 4.79313,4.79312 h 13.25908 c 2.55632,0 4.79312,-2.07703 4.79312,-4.79312 v -8.147673 c 0,-2.556314 -2.2368,-4.793128 -4.79312,-4.793128 z m 34.19157,0 c -2.55631,0 -4.79312,2.077035 -4.79312,4.793128 v 8.147673 c 0,2.55631 2.07703,4.79312 4.79312,4.79312 h 13.25909 c 2.55637,0 4.79313,-2.07703 4.79313,-4.79312 v -8.147673 c 0,-2.556314 -2.23676,-4.793128 -4.79313,-4.793128 z m 34.18844,0 c -2.55631,0 -4.79312,2.077035 -4.79312,4.793128 v 8.147673 c 0,2.55631 2.07703,4.79312 4.79312,4.79312 h 13.262237 c 2.55637,0 4.79312,-2.07703 4.79312,-4.79312 v -8.147673 c 0,-2.556314 -2.23675,-4.793128 -4.79312,-4.793128 z" />
-  </svg>
-);
-
-const FunnelCustomIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 146.01091 132.29167" className={className} fill="currentColor">
-    <path d="M 120.20045,0.00471911 C 116.81778,-0.0880809 113.42006,1.1884493 110.90702,3.7755095 106.43938,8.37473 106.23124,15.600681 110.43571,20.439811 L 89.795586,46.081684 c -4.816401,-2.56759 -10.754111,-1.68094 -14.593332,2.17587 L 59.437603,37.542613 c 1.76829,-3.96843 1.30246,-8.568451 -1.2292,-12.101561 -2.531651,-3.538781 -6.750991,-5.481851 -11.095891,-5.119071 -4.350369,0.36855 -8.184328,2.993321 -10.081665,6.900291 -1.897332,3.90697 -1.584374,8.523111 0.835082,12.134491 L 19.510581,56.993895 c -3.210933,-2.27158 -7.318838,-2.88609 -11.0573105,-1.64694 -3.7442253,1.23909 -6.6644206,4.18018 -7.86578874,7.90875 -1.20128312,3.734051 -0.53807206,7.816071 1.78592414,10.980731 2.3239852,3.170381 6.0279986,5.039471 9.9686661,5.045091 l 0.0112,-0.0212 c 4.552558,0.005 8.741982,-2.48481 10.891946,-6.475521 2.15557,-3.99081 1.919561,-8.835611 -0.600823,-12.603061 L 40.999748,42.544553 h 0.0053 c 4.911824,3.493981 11.653444,2.929951 15.907974,-1.34001 l 15.761902,10.717641 c -1.82993,4.096881 -1.26189,8.852851 1.46621,12.419482 2.72809,3.561 7.195581,5.36391 11.647101,4.69977 4.457151,-0.65863 8.195821,-3.68398 9.756451,-7.886861 1.5661,-4.20293 0.70098,-8.913571 -2.2517,-12.301591 L 113.93311,23.243982 c 5.65838,3.04195 12.71574,1.29367 16.28004,-4.031111 3.55898,-5.33045 2.44696,-12.4734612 -2.56589,-16.4807116 -2.19312,-1.7533202 -4.8159,-2.65441028 -7.44687,-2.72669029 z M 107.6907,50.463544 c -1.21818,0 -2.20485,0.98105 -2.20485,2.1923 v 77.443466 c 0,0.58094 0.23152,1.13993 0.64492,1.55107 0.41344,0.41098 0.97561,0.64129 1.55993,0.64129 h 22.39573 c 0.58428,0 1.14648,-0.23015 1.55993,-0.64129 0.41339,-0.41098 0.64491,-0.97008 0.64491,-1.55107 V 52.655844 c 0,-0.58094 -0.23151,-1.13993 -0.64491,-1.55101 -0.41344,-0.41098 -0.97561,-0.64129 -1.55993,-0.64129 z M 37.369863,76.590427 c -1.218174,0 -2.20485,0.98111 -2.20485,2.19236 v 51.316523 c 0,0.58099 0.231519,1.13998 0.644919,1.55107 0.413384,0.41098 0.97561,0.64129 1.559931,0.64129 h 22.39573 c 0.58428,0 1.14648,-0.23015 1.55993,-0.64129 0.41344,-0.41098 0.64492,-0.97008 0.64492,-1.55107 V 78.782787 c 0,-0.58094 -0.23152,-1.13998 -0.64492,-1.55107 -0.41339,-0.41098 -0.9756,-0.64129 -1.55993,-0.64129 z m 35.167301,13.685511 c -1.21818,0 -2.20484,0.9811 -2.20484,2.19236 v 37.631012 c 0,0.58094 0.23152,1.13993 0.64492,1.55107 0.41344,0.41098 0.97559,0.64129 1.55992,0.64129 h 22.384712 c 0.58427,0 1.14648,-0.23015 1.55993,-0.64129 0.41344,-0.41098 0.64492,-0.97008 0.64492,-1.55107 V 92.468298 c 0,-0.58094 -0.23152,-1.13998 -0.64492,-1.55107 -0.41338,-0.41098 -0.97561,-0.64129 -1.55993,-0.64129 z M 2.2053109,102.79405 c -1.21817311,0 -2.20484920008,0.9811 -2.20484920008,2.19236 v 25.1129 c 0,0.58094 0.23151802008,1.13998 0.64491806008,1.55107 0.41343804,0.41098 0.97561014,0.64129 1.55993114,0.64129 H 24.601044 c 0.584284,0 1.146472,-0.23015 1.559926,-0.64129 0.413437,-0.41098 0.644919,-0.97008 0.644919,-1.55107 v -25.1129 c 0,-0.58094 -0.231519,-1.13998 -0.644919,-1.55107 -0.413385,-0.41098 -0.9756,-0.64129 -1.559926,-0.64129 z" />
-  </svg>
-);
 
 const AdminIcon = ({ className, unlocked }: { className?: string; unlocked?: boolean }) => {
-  if (unlocked) {
-    return <img src={adminPadlockUnlock} className={className} alt="Unlocked" />;
-  }
   return (
-    <div 
-      className={cn(className, "bg-current")} 
-      style={{ 
-        maskImage: `url(${adminPadlock})`, 
-        WebkitMaskImage: `url(${adminPadlock})`,
-        maskSize: 'contain',
-        WebkitMaskSize: 'contain',
-        maskRepeat: 'no-repeat',
-        WebkitMaskRepeat: 'no-repeat',
-        maskPosition: 'center',
-        WebkitMaskPosition: 'center'
-      }} 
+    <img 
+      src={unlocked ? adminPadlockUnlock : adminPadlock} 
+      className={className} 
+      alt={unlocked ? "Unlocked" : "Locked"} 
     />
   );
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('calendar');
+  const [activeTab, setActiveTab] = useState<Tab>('cronograma');
+
 
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('smd_theme');
@@ -104,13 +81,14 @@ export default function App() {
   });
 
   const [selectedMonthInYearView, setSelectedMonthInYearView] = useState<Date | null>(null);
+  const [selectedTaskMonth, setSelectedTaskMonth] = useState<Date | null>(null);
+  const [selectedTaskWeek, setSelectedTaskWeek] = useState<Date | null>(null);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterModalidade, setFilterModalidade] = useState<string | 'all'>('all');
-  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [authError, setAuthError] = useState(false);
 
   const [items, setItems] = useState<CalendarItem[]>(() => {
@@ -123,12 +101,47 @@ export default function App() {
   });
 
   const [isAdmin, setIsAdmin] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(() => {
+    const today = new Date();
+    const monthEnd = endOfMonth(today);
+    const mondays = eachDayOfInterval({ start: startOfMonth(today), end: monthEnd }).filter(isMonday);
+    if (mondays.length === 0) return today;
+    const lastMonday = mondays[mondays.length - 1];
+    // If the last meeting of the month has passed, start showing the next month
+    return isAfter(today, lastMonday) ? startOfMonth(addMonths(today, 1)) : today;
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [editingItem, setEditingItem] = useState<CalendarItem | null>(null);
   const [selectedModalidade, setSelectedModalidade] = useState<string>('');
   const [formTitle, setFormTitle] = useState<string>('');
+  const [formType, setFormType] = useState<ItemType>('event');
+  const [formCategory, setFormCategory] = useState<'checklist' | 'responsavel' | 'orientacao' | undefined>(undefined);
+  const [formCover, setFormCover] = useState<string | null>(null);
+  const [isDaySelectOpen, setIsDaySelectOpen] = useState(false);
+  const [isModalidadeSelectOpen, setIsModalidadeSelectOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const handleReorder = (newOrder: CalendarItem[]) => {
+    setItems(prev => {
+      const next = [...prev];
+      const indices = newOrder.map(item => prev.findIndex(i => i.id === item.id)).sort((a, b) => a - b);
+      indices.forEach((globalIndex, i) => {
+        if (globalIndex !== -1) {
+          next[globalIndex] = newOrder[i];
+        }
+      });
+      return next;
+    });
+  };
+
+  const handleToggleTask = (id: string) => {
+    setItems(items.map(item => item.id === id ? { ...item, completed: !item.completed } : item));
+  };
 
   useEffect(() => { 
     localStorage.setItem('smd_theme', JSON.stringify(darkMode)); 
@@ -147,26 +160,36 @@ export default function App() {
     })))); 
   }, [items]);
 
-  const mondays = useMemo(() => {
+  const displayDates = useMemo(() => {
     try {
+      const today = currentDate;
+      const monthEnd = endOfMonth(today);
+      const mondays = eachDayOfInterval({ start: startOfMonth(today), end: monthEnd }).filter(isMonday);
+      const lastMonday = mondays[mondays.length - 1] || today;
+      // Use startOfMonth when advancing to ensure we don't skip to the end of the next month
+      const effectiveMonthDate = isAfter(today, lastMonday) ? startOfMonth(addMonths(today, 1)) : today;
+      
       if (viewMode === 'YEAR' && selectedMonthInYearView) {
-        return eachDayOfInterval({ 
+        const interval = eachDayOfInterval({ 
           start: startOfMonth(selectedMonthInYearView), 
           end: endOfMonth(selectedMonthInYearView) 
-        }).filter(date => isMonday(date));
+        });
+        return activeTab === 'cronograma' ? interval.filter(isMonday) : interval;
       } else if (viewMode === 'MONTH') {
-        const now = new Date();
-        return eachDayOfInterval({ 
-          start: startOfMonth(now), 
-          end: endOfMonth(now) 
-        }).filter(date => isMonday(date));
+        const interval = eachDayOfInterval({ 
+          start: startOfMonth(effectiveMonthDate), 
+          end: endOfMonth(effectiveMonthDate) 
+        });
+        return activeTab === 'cronograma' ? interval.filter(isMonday) : interval;
       } else if (viewMode === 'DAY') {
-        const now = new Date();
-        return [isMonday(now) ? now : nextMonday(now)];
+        if (activeTab === 'cronograma') {
+          return [isMonday(today) ? today : nextMonday(today)];
+        }
+        return [today];
       }
     } catch (e) { return []; }
     return [];
-  }, [viewMode, selectedMonthInYearView]);
+  }, [viewMode, selectedMonthInYearView, activeTab]);
 
   const yearMonths = useMemo(() => {
     return eachMonthOfInterval({
@@ -175,23 +198,11 @@ export default function App() {
     });
   }, [currentDate]);
 
-  const filteredItems = useMemo(() => {
-    return items.filter(item => {
-      const matchesSearch = !searchTerm || 
-        item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesModalidade = filterModalidade === 'all' || item.modalidade === filterModalidade;
-      
-      return matchesSearch && matchesModalidade;
-    }).sort((a, b) => compareAsc(a.date, b.date));
-  }, [items, searchTerm, filterModalidade]);
 
-  const sortedItems = filteredItems; // Mantendo compatibilidade com o resto do código
 
   const handleRemoveItem = (id: string) => {
-    if (confirm('Deseja excluir este encontro?')) {
-      setItems(items.filter(item => item.id !== id));
+    if (window.confirm('Deseja excluir este item?')) {
+      setItems(prev => prev.filter(item => item.id !== id));
     }
   };
 
@@ -201,12 +212,15 @@ export default function App() {
     const itemData = {
       title: formData.get('title') as string,
       date: selectedDate || new Date(),
-      type: 'event' as ItemType,
+      type: formType,
+      category: formCategory,
       startTime: (formData.get('startTime') as string) || "",
       endTime: (formData.get('endTime') as string) || "",
       description: (formData.get('description') as string) || "",
       modalidade: formData.get('modalidade') as string,
-      completed: editingItem ? editingItem.completed : false
+      cover: formCover || undefined,
+      completed: editingItem ? editingItem.completed : false,
+      order: editingItem?.order ?? Date.now()
     };
 
     if (editingItem) {
@@ -219,11 +233,14 @@ export default function App() {
     setEditingItem(null);
   };
 
-  const openAddModal = (date: Date = new Date(), item?: CalendarItem) => {
+  const openAddModal = (date: Date = new Date(), item?: CalendarItem, type: ItemType = 'event', category?: 'checklist' | 'responsavel' | 'orientacao') => {
     setSelectedDate(item ? item.date : date);
     setEditingItem(item || null);
     setSelectedModalidade(item?.modalidade || '');
     setFormTitle(item?.title || '');
+    setFormType(item?.type || type);
+    setFormCategory(item?.category || category);
+    setFormCover(item?.cover || null);
     setIsModalOpen(true);
   };
 
@@ -232,12 +249,25 @@ export default function App() {
       
       {/* Dynamic Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border transition-colors">
-        <div className="max-w-5xl mx-auto px-2 md:px-6 h-16 flex items-center justify-center gap-3 md:gap-6">
-          <h1 className="text-xl font-bold tracking-tight text-primary uppercase flex items-center flex-shrink-0">
-            <CalendarHeaderIcon className="h-6 sm:h-7 w-auto" />
-          </h1>
-          <div className="flex items-center gap-2 lg:gap-3 overflow-x-auto no-scrollbar">
-            <div className={cn("flex gap-1.5 lg:gap-2 p-1 rounded-full flex-shrink-0", darkMode ? "bg-muted" : "bg-[#E2E2E2]")}>
+        <div className="max-w-5xl mx-auto px-2 md:px-6 h-16 flex items-center justify-center gap-4 md:gap-8">
+          <motion.button 
+            onClick={() => setActiveTab(activeTab === 'cronograma' ? 'tarefas' : 'cronograma')}
+            whileHover={{ scale: 1 }}
+            className="w-[37px] h-[37px] flex items-center justify-center flex-shrink-0 relative transition-transform duration-200"
+            title={activeTab === 'cronograma' ? 'Ir para Modo Tarefa' : 'Ir para Modo Cronograma'}
+          >
+            <img 
+              src={changeMode} 
+              alt="Change App Mode" 
+              className={cn(
+                "w-[28px] h-[28px] relative z-10 transition-all duration-300 transform-gpu",
+                activeTab === 'tarefas' ? "drop-shadow-[0_0_8px_#00cc00ff]" : "drop-shadow-none"
+              )}
+            />
+          </motion.button>
+
+          {activeTab === 'cronograma' ? (
+            <div className={cn("flex gap-1 p-1 rounded-full flex-shrink-0 relative w-[190px] sm:w-[220px] h-[30px] items-center justify-center", darkMode ? "bg-[#262626ff]" : "bg-[#E2E2E2]")}>
                 {(['DAY', 'MONTH', 'YEAR'] as const).map(mode => (
                   <button
                     key={mode}
@@ -246,386 +276,645 @@ export default function App() {
                       if (mode === 'YEAR') setSelectedMonthInYearView(null);
                     }}
                     className={cn(
-                      "px-4 py-1.5 rounded-full text-xs font-display font-bold uppercase tracking-wider transition-all",
-                      viewMode === mode ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                      "px-3 sm:px-4 h-full flex items-center rounded-full text-xs font-display font-bold uppercase tracking-wider transition-colors relative",
+                      viewMode === mode ? "text-[#00cc00ff]" : (darkMode ? "text-[#f7f7f7ff] hover:text-[#00cc00ff]/80" : "text-[#121212ff] hover:text-[#00cc00ff]/80")
                     )}
                   >
-                    {mode === 'DAY' ? 'Semana' : mode === 'MONTH' ? 'Mês' : 'Ano'}
+                    {viewMode === mode && (
+                      <motion.div
+                        layoutId="activeViewMode"
+                        className="absolute inset-0 bg-background shadow-sm rounded-full"
+                        transition={{ type: "tween", duration: 0.2 }}
+                      />
+                    )}
+                    <span className="relative z-10">
+                      {mode === 'DAY' ? 'Semana' : mode === 'MONTH' ? 'Mês' : 'Ano'}
+                    </span>
                   </button>
                 ))}
             </div>
-            
-            <button 
-              onClick={() => setDarkMode(!darkMode)} 
+          ) : (
+            <div className={cn("px-6 rounded-full flex-shrink-0 relative flex items-center justify-center w-[190px] sm:w-[220px] h-[30px]", darkMode ? "bg-[#262626ff]" : "bg-[#E2E2E2]")}>
+              <span className="text-[#00cc00ff] text-xs font-display font-bold uppercase tracking-widest">
+                MODO TAREFA
+              </span>
+            </div>
+          )}
+          
+          <button 
+            onClick={() => setDarkMode(!darkMode)} 
+            className={cn(
+              "w-[56px] h-[30px] shrink-0 rounded-full shadow-inner relative flex items-center px-[3px] transition-colors duration-500 overflow-hidden",
+              darkMode ? "bg-[#262626ff] border border-border/50" : "bg-[#e2e2e2]"
+            )}
+            style={{ boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.1)' }}
+            title="Alternar Tema"
+          >
+            <div
               className={cn(
-                "w-[56px] h-[30px] shrink-0 rounded-full shadow-inner relative flex items-center px-[3px] transition-colors duration-500 overflow-hidden",
-                darkMode ? "bg-muted border border-border/50" : "bg-[#e2e2e2]"
+                "w-[24px] h-[24px] rounded-full flex items-center justify-center transition-all duration-300 transform",
+                darkMode ? "bg-[#121212ff] translate-x-[26px]" : "bg-white translate-x-0 shadow-md"
               )}
-              style={{ boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.1)' }}
-              title="Alternar Tema"
+              style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}
             >
-              <div
-                className={cn(
-                  "w-[24px] h-[24px] rounded-full flex items-center justify-center transition-all duration-300 transform",
-                  darkMode ? "bg-[#121212] translate-x-[26px]" : "bg-white translate-x-0 shadow-md"
-                )}
-                style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}
-              >
-                {darkMode ? (
-                  <Moon strokeWidth={3} className="w-[14px] h-[14px] text-white" />
-                ) : (
-                  <Sun strokeWidth={3} className="w-[14px] h-[14px] text-[#09090B]" />
-                )}
-              </div>
-            </button>
+              {darkMode ? (
+                <Moon strokeWidth={3} className="w-[14px] h-[14px] text-[#00cc00ff]" />
+              ) : (
+                <Sun strokeWidth={3} className="w-[14px] h-[14px] text-[#00cc00ff]" />
+              )}
+            </div>
+          </button>
 
-            <button 
-              onClick={() => { 
-                if (isAdmin) setIsAdmin(false);
-                else {
-                  setAdminPassword('');
-                  setAuthError(false);
-                  setIsAuthModalOpen(true);
-                }
-              }}
+          <motion.button 
+            onClick={() => { 
+              if (isAdmin) setIsAdmin(false);
+              else {
+                setAdminPassword('');
+                setAuthError(false);
+                setIsAuthModalOpen(true);
+              }
+            }}
+            whileHover={{ scale: 1 }}
+            className="w-[36px] h-[36px] flex items-center justify-center shrink-0 transition-transform duration-200"
+            title="Modo Administrador"
+          >
+            <AdminIcon 
               className={cn(
-                "w-[30px] h-[30px] transition-transform flex items-center justify-center shrink-0 hover:scale-105 active:scale-95",
-                isAdmin ? "text-primary" : "text-muted-foreground opacity-50 hover:opacity-100"
-              )}
-              title="Modo Administrador"
-            >
-              <AdminIcon className="w-[20px] h-[20px]" unlocked={isAdmin} />
-            </button>
-          </div>
+                "w-[24px] h-[24px] transition-all duration-300 transform-gpu",
+                isAdmin ? "drop-shadow-[0_0_8px_#00cc00ff]" : "drop-shadow-none opacity-50 hover:opacity-100"
+              )} 
+              unlocked={isAdmin} 
+            />
+          </motion.button>
         </div>
       </header>
 
       {/* Main Content Area */}
       <main className="max-w-5xl mx-auto px-6 py-6 min-h-[calc(100vh-160px)]">
         
-        {/* TAB 1: CALENDAR (HIG + Material 3) */}
-        {activeTab === 'calendar' && (
+        {/* TAB 1: CRONOGRAMA (HIG + Material 3) */}
+        {activeTab === 'cronograma' && (
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-            {(viewMode === 'MONTH' || (viewMode === 'YEAR' && selectedMonthInYearView)) && (
-              <div className="flex items-center justify-between mb-8 pb-4 border-b border-border">
-                <div className="flex items-center gap-4">
-                  {viewMode === 'YEAR' && selectedMonthInYearView && (
-                    <button 
-                      onClick={() => setSelectedMonthInYearView(null)}
-                      className="p-1 pr-2 transition-colors text-primary"
-                    >
-                      <ChevronLeft className="w-6 h-6" />
-                    </button>
-                  )}
-                  <h2 className="text-3xl font-black tracking-tight text-foreground uppercase font-display">
-                    {format(viewMode === 'MONTH' ? new Date() : selectedMonthInYearView!, 'MMMM', { locale: ptBR })}
-                  </h2>
+              {(viewMode === 'MONTH' || (viewMode === 'YEAR' && selectedMonthInYearView)) && (
+                <div className="flex flex-col items-center justify-center mb-4 pb-2 border-b border-border">
+                  <div className="flex items-center gap-6">
+                    {viewMode === 'YEAR' && (
+                      <button 
+                        onClick={() => {
+                          if (selectedMonthInYearView) setSelectedMonthInYearView(addMonths(selectedMonthInYearView, -1));
+                        }}
+                        className="p-1 transition-colors text-primary hover:opacity-70"
+                      >
+                        <ChevronLeft className="w-8 h-8" />
+                      </button>
+                    )}
+                    
+                    <h2 className="text-3xl font-black tracking-tight text-foreground uppercase font-display text-center min-w-[180px]">
+                      {(() => {
+                        if (viewMode === 'MONTH') {
+                          return format(currentDate, 'MMMM', { locale: ptBR });
+                        }
+                        return format(selectedMonthInYearView!, 'MMMM', { locale: ptBR });
+                      })()}
+                    </h2>
+
+                    {viewMode === 'YEAR' && (
+                      <button 
+                        onClick={() => {
+                          if (selectedMonthInYearView) setSelectedMonthInYearView(addMonths(selectedMonthInYearView, 1));
+                        }}
+                        className="p-1 transition-colors text-primary hover:opacity-70"
+                      >
+                        <ChevronRight className="w-8 h-8" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  <span className="text-sm font-bold uppercase tracking-widest text-[#00cc00ff] -mt-1">
+                    {format(viewMode === 'YEAR' ? selectedMonthInYearView! : currentDate, 'yyyy')}
+                  </span>
                 </div>
-                {viewMode === 'YEAR' && selectedMonthInYearView && (
-                   <span className={cn(
-                     "text-sm font-bold uppercase tracking-widest px-3 py-1 rounded-full",
-                     darkMode ? "bg-[#1C1C1E] text-[#FFFFFF]" : "bg-[#E2E2E2] text-muted-foreground"
-                   )}>
-                     {format(selectedMonthInYearView, 'yyyy')}
-                   </span>
+              )}
+
+              {viewMode === 'YEAR' && !selectedMonthInYearView && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+                  {yearMonths.map((month) => {
+                    const itemsInMonth = items.filter(i => 
+                      i.date.getMonth() === month.getMonth() && 
+                      i.date.getFullYear() === month.getFullYear()
+                    );
+                    const today = new Date();
+                    const monthEnd = endOfMonth(today);
+                    const mondays = eachDayOfInterval({ start: startOfMonth(today), end: monthEnd }).filter(isMonday);
+                    const lastMonday = mondays[mondays.length - 1];
+                    const effectiveMonthDate = isAfter(today, lastMonday) ? addMonths(today, 1) : today;
+                    const isCurrentMonth = isSameMonth(month, effectiveMonthDate);
+                    
+                    return (
+                      <button
+                        key={month.toISOString()}
+                        onClick={() => setSelectedMonthInYearView(month)}
+                        className={cn(
+                          "p-6 rounded-3xl border transition-all text-left group relative overflow-hidden",
+                          isCurrentMonth 
+                            ? "bg-card border-primary" 
+                            : "bg-card border-border hover:border-primary/50 hover:shadow-md"
+                        )}
+                      >
+                        <div className="flex justify-between items-center mb-4 pr-16">
+                          <h3 className="text-xl font-display font-bold uppercase tracking-tight text-foreground group-hover:text-primary transition-colors">
+                            {format(month, 'MMMM', { locale: ptBR })}
+                          </h3>
+                        </div>
+
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center gap-3 min-w-[80px]">
+                          <div className="w-[1px] h-12 bg-border" />
+                          <span className="text-lg font-bold text-[#00cc00ff]">
+                           {format(month, 'yyyy')}
+                          </span>
+                        </div>
+                        
+                        <div className="space-y-1.5">
+                          {itemsInMonth.length > 0 ? (
+                            itemsInMonth.slice(0, 3).map(item => (
+                              <div key={item.id} className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                                <span className="font-bold text-[#00cc00ff] shrink-0">{format(item.date, 'dd')}:</span>
+                                <span className="truncate">{item.title}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-primary italic">Sem encontros</p>
+                          )}
+                          {itemsInMonth.length > 3 && (
+                            <p className="text-[10px] text-primary font-bold mt-1">+ {itemsInMonth.length - 3} itens</p>
+                          )}
+                        </div>
+
+                        <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ChevronRight className="w-5 h-5 text-primary" />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {(viewMode !== 'YEAR' || selectedMonthInYearView) && (
+                <div className="space-y-8">
+                {displayDates.length === 0 ? (
+                  <div className="py-20 text-center text-muted-foreground">Nenhum evento neste período.</div>
+                ) : (
+                  displayDates.map((date) => (
+                    <div key={date.toISOString()} className={cn(
+                      "flex flex-col gap-6",
+                      viewMode === 'DAY' ? "items-center text-center w-full" : "md:flex-row items-start"
+                    )}>
+                      <div className={cn(
+                        "flex md:flex-col items-center gap-4 md:gap-1 shrink-0 mt-1",
+                        viewMode === 'DAY' ? "justify-center" : "md:items-start md:w-28"
+                      )}>
+                        <div className="flex items-baseline">
+                          {viewMode === 'DAY' ? (
+                            <div className="text-5xl font-black tracking-tighter font-display flex items-baseline">
+                              <span className="text-[#00cc00ff]">{format(date, 'dd')}</span>
+                              <span className={cn("text-2xl ml-1", darkMode ? "text-[#f7f7f7ff]" : "text-[#121212ff]")}>/{format(date, 'MM')}</span>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-4xl font-black tracking-tighter text-[#00cc00ff] font-display">{format(date, 'dd')}</span>
+                              <span className={cn("font-bold uppercase tracking-widest text-xs ml-0.5", darkMode ? "text-[#f7f7f7ff]" : "text-[#121212ff]")}>
+                                /{format(date, 'MM')}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => openAddModal(date)}
+                            className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                          >
+                            <Plus className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex-1 w-full space-y-3">
+                        {(() => {
+                          const dayItems = items.filter(i => isSameDay(i.date, date) && i.type === 'event');
+                          if (dayItems.length === 0) {
+                            return (
+                              <div className={cn(
+                                "p-6 rounded-2xl border border-dashed text-xs uppercase tracking-widest font-bold text-center",
+                                darkMode ? "border-[#C5C5C5] text-[#C5C5C5]" : "border-[#121212ff] text-[#121212ff]"
+                              )}>
+                                Livre
+                              </div>
+                            );
+                          }
+                          return dayItems.map(item => (
+                            <div key={item.id} className="p-6 rounded-2xl bg-card border border-border shadow-sm hover:shadow-lg transition-all flex flex-row items-center gap-6 group">
+                              <div className="shrink-0">
+                                <div 
+                                  onClick={() => item.cover && setSelectedImage(item.cover)}
+                                  className={cn(
+                                    "w-20 h-20 border rounded-xl overflow-hidden relative flex items-center justify-center bg-muted/20 shrink-0",
+                                    item.cover ? "cursor-zoom-in" : ""
+                                  )}
+                                >
+                                  {item.cover ? (
+                                    <img 
+                                      src={item.cover} 
+                                      alt="Capa" 
+                                      className="absolute inset-0 w-full h-full object-cover" 
+                                    />
+                                  ) : (
+                                    <span className="text-[8px] font-black uppercase tracking-tighter text-muted-foreground/20 text-center px-1">Sem Capa</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex-1 flex flex-col gap-2">
+                                <div className="flex items-center justify-end gap-3 w-full text-right">
+                                  <h4 className="text-base font-display font-black text-foreground tracking-tight">{item.title}</h4>
+                                  {item.modalidade && (
+                                    <>
+                                      <span className="text-muted-foreground/30 font-light">|</span>
+                                      <span className={cn(
+                                        "text-[11px] font-black uppercase tracking-widest italic",
+                                        item.modalidade === 'Ponto Facultativo' ? 'text-orange-500' : item.modalidade === 'Feriado' ? 'text-red-500' : 'text-[#00cc00ff]'
+                                      )}>
+                                        {item.modalidade}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                                {item.description && (
+                                  <p className="text-sm text-muted-foreground leading-relaxed text-right">{item.description}</p>
+                                )}
+                                <div className="flex items-center justify-end gap-3 mt-auto pt-2">
+                                  {(item.startTime || item.endTime) && (
+                                    <div className={cn(
+                                      "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border-[0.5px] bg-transparent whitespace-nowrap",
+                                      darkMode ? "border-zinc-600 text-[#f7f7f7ff]" : "border-zinc-300 text-black"
+                                    )}>
+                                      <Clock className="w-3.5 h-3.5" />
+                                      <span>{item.startTime}{item.startTime && item.endTime ? ' - ' : ''}{item.endTime}</span>
+                                    </div>
+                                  )}
+                                  {isAdmin && (
+                                    <div className={cn(
+                                      "flex items-center gap-0 border-[0.5px] rounded-full p-0.5 bg-transparent",
+                                      darkMode ? "border-zinc-600" : "border-zinc-300"
+                                    )}>
+                                      <button onClick={() => openAddModal(item.date, item)} className={cn(
+                                        "p-1.5 rounded-full transition-colors",
+                                        darkMode ? "text-[#f7f7f7ff]/70 hover:text-[#f7f7f7ff] hover:bg-[#f7f7f7ff]/10" : "text-black/70 hover:text-black hover:bg-black/10"
+                                      )}>
+                                        <Pencil className="w-4 h-4" />
+                                      </button>
+                                      <div className={cn("w-[1px] h-4 mx-1 opacity-25", darkMode ? "bg-[#f7f7f7ff]" : "bg-black")}></div>
+                                      <button onClick={(e) => { e.stopPropagation(); setItemToDelete(item.id); setIsDeleteConfirmOpen(true); }} className="p-1.5 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors">
+                                        <Trash className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             )}
-
-            {viewMode === 'YEAR' && !selectedMonthInYearView && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                {yearMonths.map((month) => {
-                  const itemsInMonth = items.filter(i => 
-                    i.date.getMonth() === month.getMonth() && 
-                    i.date.getFullYear() === month.getFullYear()
-                  );
-                  const isCurrentMonth = isSameDay(startOfMonth(new Date()), startOfMonth(month));
-                  
-                  return (
-                    <button
-                      key={month.toISOString()}
-                      onClick={() => setSelectedMonthInYearView(month)}
-                      className={cn(
-                        "p-6 rounded-3xl border transition-all text-left group relative overflow-hidden",
-                        isCurrentMonth 
-                          ? "bg-card border-primary" 
-                          : "bg-card border-border hover:border-primary/50 hover:shadow-md"
-                      )}
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-xl font-display font-bold uppercase tracking-tight text-foreground group-hover:text-primary transition-colors">
-                          {format(month, 'MMMM', { locale: ptBR })}
-                        </h3>
-                         <span className={cn(
-                           "text-xs font-bold text-muted-foreground px-2 py-1 rounded-full",
-                           darkMode ? "bg-[#121212]" : "bg-muted"
-                         )}>
-                          {format(month, 'yyyy')}
-                        </span>
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                        {itemsInMonth.length > 0 ? (
-                          itemsInMonth.slice(0, 3).map(item => (
-                            <div key={item.id} className="flex items-center gap-2 text-xs text-muted-foreground truncate">
-                              <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                              <span className="font-bold text-foreground/70 shrink-0">{format(item.date, 'dd')}:</span>
-                              <span className="truncate">{item.title}</span>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-xs text-muted-foreground italic">Sem encontros</p>
-                        )}
-                        {itemsInMonth.length > 3 && (
-                          <p className="text-[10px] text-primary font-bold mt-1">+ {itemsInMonth.length - 3} itens</p>
-                        )}
-                      </div>
-
-                      <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ChevronRight className="w-5 h-5 text-primary" />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {(viewMode !== 'YEAR' || selectedMonthInYearView) && (
-              <div className="space-y-8">
-              {mondays.length === 0 ? (
-                <div className="py-20 text-center text-muted-foreground">Nenhum evento neste período.</div>
-              ) : (
-                mondays.map((monday) => (
-                  <div key={monday.toISOString()} className={cn(
-                    "flex flex-col gap-6",
-                    viewMode === 'DAY' ? "items-center text-center w-full" : "md:flex-row items-start"
-                  )}>
-                    <div className={cn(
-                      "flex md:flex-col items-center gap-4 md:gap-1 shrink-0 mt-1",
-                      viewMode === 'DAY' ? "justify-center" : "md:items-start md:w-28"
-                    )}>
-                      <div className="flex items-baseline">
-                        {viewMode === 'DAY' ? (
-                          <span className="text-5xl font-black tracking-tighter text-foreground font-display">
-                            {format(monday, 'dd/MM')}
-                          </span>
-                        ) : (
-                          <>
-                            <span className="text-4xl font-black tracking-tighter text-foreground font-display">{format(monday, 'dd')}</span>
-                            <span className="font-bold uppercase tracking-widest text-muted-foreground text-xs ml-0.5">
-                              /{format(monday, 'MM')}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      {isAdmin && (
-                        <div className="ml-auto md:ml-0 md:mt-4 flex items-center gap-1">
-                          <button onClick={() => openAddModal(monday)} className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                            <Plus className="w-5 h-5" />
-                          </button>
-                          <button type="button" aria-label="WhatsApp" className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.012c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
-                            </svg>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 w-full space-y-3">
-                      {(() => {
-                        const dayItems = items.filter(i => isSameDay(i.date, monday));
-                        return dayItems.length === 0 ? (
-                          <div className={cn(
-                            "p-6 rounded-2xl border border-dashed text-xs uppercase tracking-widest font-bold text-center",
-                            darkMode ? "border-[#C5C5C5] text-[#C5C5C5]" : "border-[#09090B] text-[#09090B]"
-                          )}>
-                            Livre
-                          </div>
-                        ) : (
-                          dayItems.map(item => (
-                            <div key={item.id} className="p-5 rounded-2xl bg-card border border-border shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center gap-4">
-                              <div className="flex-1">
-                                {item.modalidade && (
-                                  <p className={cn("text-sm italic mb-1", item.modalidade === 'Ponto Facultativo' ? 'text-orange-500' : item.modalidade === 'Feriado' ? 'text-red-500' : 'text-foreground')}>
-                                    {item.modalidade}
-                                    {['Ponto Facultativo', 'Feriado'].includes(item.modalidade) && ' (Sem Encontro)'}
-                                  </p>
-                                )}
-                                <h4 className="text-base font-display font-semibold text-foreground tracking-wide">{item.title}</h4>
-                                {item.description && <p className="text-sm text-muted-foreground mt-1">{item.description}</p>}
-                              </div>
-                              <div className="flex items-center gap-3">
-                                {(item.startTime || item.endTime) && (
-                                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-foreground text-xs font-medium">
-                                    <Clock className="w-3.5 h-3.5" />
-                                    {item.startTime}{item.startTime && item.endTime ? ' - ' : ''}{item.endTime}
-                                  </div>
-                                )}
-                                {isAdmin && (
-                                  <div className="flex items-center gap-0 border border-border/60 rounded-full p-0.5">
-                                    <button onClick={() => openAddModal(item.date, item)} className="p-1.5 text-primary/70 hover:text-primary hover:bg-primary/10 rounded-full transition-colors">
-                                      <Pencil className="w-4 h-4" />
-                                    </button>
-                                    <div className="w-[1px] h-4 bg-white opacity-25 mx-1"></div>
-                                    <button onClick={() => handleRemoveItem(item.id)} className="p-1.5 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors">
-                                      <Trash className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))
-                        );
-                      })()}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            )}
           </motion.div>
         )}
-
-        {/* TAB 2: LIST (Fluent 2 Style Scannable List) */}
-        {activeTab === 'list' && (
-          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
-            {/* Stats Header with Funnel */}
-            <div className="relative flex items-center justify-center mb-8 mt-4">
-              <div className="flex flex-col items-center text-center">
-                <h2 className={cn(
-                  "text-2xl font-bold uppercase font-display px-6 py-2 border-2 rounded-2xl",
-                  darkMode ? "text-primary border-primary" : "text-[#09090B] border-[#09090B]"
-                )}>
-                  Estatísticas
-                </h2>
-              </div>
+        {activeTab === 'tarefas' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: 20 }}
+            className="space-y-8"
+          >
+            {(() => {
+              // Current week for user view
+              const today = new Date();
+              const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
               
-              <div className="absolute right-0">
-                <button 
-                  onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
-                  className={cn(
-                    "p-3 rounded-full transition-all duration-300",
-                    isFilterMenuOpen 
-                      ? "bg-primary text-white scale-110 shadow-[0_0_20px_rgba(0,255,0,0.5)]" 
-                      : darkMode ? "bg-muted text-white hover:bg-muted/80" : "bg-[#E2E2E2] text-[#09090B] hover:bg-neutral-200"
-                  )}
-                >
-                  <Filter className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
+              // Determine what to show
+              const activeTaskDate = selectedTaskWeek || (selectedTaskMonth ? null : currentWeekStart);
 
-            {/* Collapsible Filter Menu */}
-            <AnimatePresence>
-              {isFilterMenuOpen && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden mb-8"
-                >
-                  <div className="bg-card border border-border rounded-3xl p-6 space-y-6 shadow-xl">
-                    <div className="space-y-4">
-                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Pesquisar</label>
-                      <div className="relative">
-                        <input 
-                          type="text"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          placeholder="Palavras, Título ou Descrição..."
-                          className="w-full bg-muted border border-border rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-colors"
-                        />
-                      </div>
+              // 1. Week Selection List (Primary Entry)
+              if (!selectedTaskWeek) {
+                const today = new Date();
+                const monthEnd = endOfMonth(today);
+                const mondays = eachDayOfInterval({ start: startOfMonth(today), end: monthEnd }).filter(isMonday);
+                const lastMonday = mondays[mondays.length - 1];
+                const effectiveMonthDate = isAfter(today, lastMonday) ? addMonths(today, 1) : today;
+                
+                // Use a local variable to ensure we have a month to render
+                const renderMonth = selectedTaskMonth || effectiveMonthDate;
+                
+                const weeks = eachWeekOfInterval({
+                  start: startOfMonth(renderMonth),
+                  end: endOfMonth(renderMonth)
+                }, { weekStartsOn: 1 }).filter(w => isSameMonth(w, renderMonth));
+
+                return (
+                  <div className="space-y-6 max-w-2xl mx-auto">
+                    <div className="flex items-center justify-center gap-4 mb-4 px-4">
+                      <button 
+                        onClick={() => setSelectedTaskMonth(addMonths(renderMonth, -1))}
+                        className="p-1 transition-colors text-primary hover:opacity-70"
+                      >
+                        <ChevronLeft className="w-8 h-8" />
+                      </button>
+                      
+                      <h2 className="text-3xl font-black uppercase font-display text-center">
+                        {format(renderMonth, 'MMMM', { locale: ptBR })}
+                      </h2>
+
+                      <button 
+                        onClick={() => setSelectedTaskMonth(addMonths(renderMonth, 1))}
+                        className="p-1 transition-colors text-primary hover:opacity-70"
+                      >
+                        <ChevronRight className="w-8 h-8" />
+                      </button>
+                    </div>
+                    
+                    <div className="grid gap-4 px-4">
+                      {weeks.map((weekStart) => (
+                        <button
+                          key={weekStart.toISOString()}
+                          onClick={() => {
+                            if (!selectedTaskMonth) setSelectedTaskMonth(renderMonth);
+                            setSelectedTaskWeek(weekStart);
+                          }}
+                          className="bg-card border border-border rounded-2xl p-6 flex justify-between items-center hover:border-primary transition-all group"
+                        >
+                          <div className="flex flex-col items-start">
+                            <span className="text-sm font-bold uppercase">
+                              <span className="text-[#00cc00ff]">{format(weekStart, "dd")}</span>
+                              <span className={darkMode ? "text-[#f7f7f7ff]" : "text-[#121212ff]"}>/{format(weekStart, "MM")}</span>
+                            </span>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-primary group-hover:opacity-80 transition-all" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
+              // 3. MAIN DASHBOARD (User or Admin specific week)
+              if (activeTaskDate) {
+                const weekItems = items.filter(i => 
+                  i.type === 'task' && 
+                  isSameDay(startOfWeek(i.date, { weekStartsOn: 1 }), activeTaskDate)
+                );
+
+                const checklist = weekItems.filter(i => i.category === 'checklist');
+                const responsaveis = weekItems.filter(i => i.category === 'responsavel').sort((a, b) => a.title.localeCompare(b.title));
+                const orientacoes = weekItems.filter(i => i.category === 'orientacao');
+
+                return (
+                  <div className="space-y-10">
+                    <div className="flex items-center mb-4">
+                      <button 
+                        onClick={() => setSelectedTaskWeek(null)}
+                        className="p-1 pr-2 transition-colors text-primary hover:opacity-70"
+                      >
+                        <ChevronLeft className="w-8 h-8" />
+                      </button>
                     </div>
 
-                    <div className="space-y-4">
-                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Filtrar por Modalidade</label>
-                      <div className="flex flex-wrap gap-2">
-                        {['all', 'Abertura', 'O Livro dos Espíritos', 'Reforma Íntima', 'Especial', 'Prática', 'Expoente Espírita', 'Encerramento', 'Feriado', 'Ponto Facultativo'].map(m => (
-                          <button
-                            key={m}
-                            onClick={() => setFilterModalidade(m)}
-                            className={cn(
-                              "px-4 py-2 rounded-full text-xs font-bold transition-all border",
-                              filterModalidade === m
-                                ? "bg-primary text-white border-primary shadow-[0_0_10px_rgba(0,255,0,0.3)]"
-                                : "bg-transparent text-muted-foreground border-border hover:border-muted-foreground/30"
-                            )}
-                          >
-                            {m === 'all' ? 'Todos' : m}
-                          </button>
-                        ))}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      {/* Checklist Panel */}
+                      <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm flex flex-col min-h-[400px]">
+                        <div className="flex justify-between items-center mb-8">
+                          <h3 className={cn("text-xl font-black uppercase flex items-center gap-3 font-display", darkMode ? "text-[#f7f7f7ff]" : "text-[#121212ff]")}>
+                            <SquareCheckBig className="w-6 h-6 text-primary" />
+                            Checklist
+                          </h3>
+                          {isAdmin && (
+                            <button onClick={() => openAddModal(activeTaskDate, undefined, 'task', 'checklist')} className="p-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20">
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <Reorder.Group axis="y" values={checklist} onReorder={handleReorder} className="space-y-3 flex-1">
+                          {checklist.map((item) => {
+                                    return (
+                                      <Reorder.Item 
+                                        key={item.id} 
+                                        value={item}
+                                        className={cn(
+                                          "flex items-center justify-between group gap-3 bg-card/50 rounded-xl p-2 -mx-2 transition-colors select-none hover:bg-primary/5 cursor-grab active:cursor-grabbing"
+                                        )}
+                                      >
+                                        <div className="flex items-center gap-3 flex-1">
+
+                                          <label className="flex items-center gap-3 cursor-pointer flex-1">
+                                          <div className="relative flex items-center justify-center shrink-0">
+                                            <input 
+                                              type="checkbox" 
+                                              checked={item.completed}
+                                              onChange={() => handleToggleTask(item.id)}
+                                              className="peer appearance-none w-5 h-5 border-2 border-primary/40 rounded-[4px] checked:bg-primary checked:border-primary transition-all cursor-pointer" 
+                                            />
+                                            <Check className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={4} />
+                                          </div>
+                                          <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2">
+                                              <span className={cn(
+                                                "text-sm font-bold transition-all",
+                                                item.completed ? "text-muted-foreground line-through" : "text-foreground"
+                                              )}>
+                                                {item.title}
+                                              </span>
+                                              {item.modalidade && (
+                                                <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-black bg-primary/10 text-primary tracking-wider w-fit">
+                                                  {item.modalidade}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </label>
+                                        </div>
+                                        {isAdmin && (
+                                          <div className="flex items-center gap-3 px-3 py-1.5 bg-card border border-border shadow-sm rounded-full cursor-default" onPointerDown={(e) => e.stopPropagation()}>
+                                            <button 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                openAddModal(item.date, item, 'task', 'checklist');
+                                              }} 
+                                              className={cn("transition-transform", darkMode ? "text-primary" : "text-black")}
+                                            >
+                                              <Pencil className="w-3.5 h-3.5" />
+                                            </button>
+                                            <div className="w-[1px] h-3 bg-border" />
+                                            <button 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setItemToDelete(item.id);
+                                                setIsDeleteConfirmOpen(true);
+                                              }} 
+                                              className="text-destructive transition-transform"
+                                            >
+                                              <Trash className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        )}
+                                      </Reorder.Item>
+                                    );
+                                  })}
+                          {checklist.length === 0 && <p className="text-xs text-muted-foreground italic text-center py-10">Nenhuma atividade registrada para esta semana.</p>}
+                        </Reorder.Group>
+                      </div>
+
+                      {/* Responsáveis Panel */}
+                      <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm flex flex-col min-h-[400px]">
+                        <div className="flex justify-between items-center mb-8">
+                          <h3 className={cn("text-xl font-black uppercase flex items-center gap-3 font-display", darkMode ? "text-[#f7f7f7ff]" : "text-[#121212ff]")}>
+                            <Users className="w-6 h-6 text-primary" />
+                            Responsáveis
+                          </h3>
+                          {isAdmin && (
+                            <button onClick={() => openAddModal(activeTaskDate, undefined, 'task', 'responsavel')} className="p-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20">
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <Reorder.Group axis="y" values={responsaveis} onReorder={handleReorder} className="space-y-3 flex-1">
+                          {responsaveis.map((item) => {
+                                    return (
+                                      <Reorder.Item 
+                                        key={item.id} 
+                                        value={item}
+                                        className={cn(
+                                          "flex items-center justify-between group gap-3 bg-card/50 rounded-xl p-2 -mx-2 transition-colors select-none hover:bg-primary/5 cursor-grab active:cursor-grabbing"
+                                        )}
+                                      >
+                                        <div className="flex items-center gap-3 flex-1">
+
+                                          <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-sm font-bold text-foreground">{item.title}</span>
+                                              {item.modalidade && (
+                                                <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-black bg-primary/10 text-primary tracking-wider w-fit">
+                                                  {item.modalidade}
+                                                </span>
+                                              )}
+                                            </div>
+                                            {item.description && <span className="text-[10px] text-muted-foreground uppercase font-bold">{item.description}</span>}
+                                          </div>
+                                        </div>
+                                        {isAdmin && (
+                                          <div className="flex items-center gap-3 px-3 py-1.5 bg-card border border-border shadow-sm rounded-full cursor-default" onPointerDown={(e) => e.stopPropagation()}>
+                                            <button 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                openAddModal(item.date, item, 'task', 'responsavel');
+                                              }} 
+                                              className={cn("transition-transform", darkMode ? "text-primary" : "text-black")}
+                                            >
+                                              <Pencil className="w-3.5 h-3.5" />
+                                            </button>
+                                            <div className="w-[1px] h-3 bg-border" />
+                                            <button 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setItemToDelete(item.id);
+                                                setIsDeleteConfirmOpen(true);
+                                              }} 
+                                              className="text-destructive transition-transform"
+                                            >
+                                              <Trash className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        )}
+                                      </Reorder.Item>
+                                    );
+                                  })}
+                          {responsaveis.length === 0 && <p className="text-xs text-muted-foreground italic text-center py-10">Nenhum responsável escalado para esta semana.</p>}
+                        </Reorder.Group>
+                      </div>
+
+                      {/* Orientações Panel */}
+                      <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm flex flex-col min-h-[400px]">
+                        <div className="flex justify-between items-center mb-8">
+                          <h3 className={cn("text-xl font-black uppercase flex items-center gap-3 font-display", darkMode ? "text-[#f7f7f7ff]" : "text-[#121212ff]")}>
+                            <Compass className="w-6 h-6 text-primary" />
+                            Orientações
+                          </h3>
+                          {isAdmin && (
+                            <button onClick={() => openAddModal(activeTaskDate, undefined, 'task', 'orientacao')} className="p-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20">
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <Reorder.Group axis="y" values={orientacoes} onReorder={handleReorder} className="space-y-4 flex-1">
+                          {orientacoes.map(item => {
+                                  return (
+                                    <Reorder.Item key={item.id} value={item} className="group relative flex items-start gap-3 p-2 -mx-2 rounded-xl hover:bg-primary/5 transition-colors cursor-grab active:cursor-grabbing">
+
+                                      <div className="flex-1">
+                                      <div className="border-l-4 border-primary/30 pl-4 py-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <h5 className="text-sm font-bold text-foreground">{item.modalidade || item.title}</h5>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
+                                      </div>
+                                      {isAdmin && (
+                                        <div className="absolute top-0 right-0 flex items-center gap-3 px-3 py-1.5 bg-card border border-border shadow-sm rounded-full cursor-default" onPointerDown={(e) => e.stopPropagation()}>
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openAddModal(item.date, item, 'task', 'orientacao');
+                                            }} 
+                                            className={cn("transition-transform", darkMode ? "text-primary" : "text-black")}
+                                          >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                          </button>
+                                          <div className="w-[1px] h-3 bg-border" />
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setItemToDelete(item.id);
+                                              setIsDeleteConfirmOpen(true);
+                                            }} 
+                                            className="text-destructive transition-transform"
+                                          >
+                                            <Trash className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      )}
+                                      </div>
+                                    </Reorder.Item>
+                                  );
+                                })}
+                          {orientacoes.length === 0 && <p className="text-xs text-muted-foreground italic text-center py-10">Nenhuma orientação registrada para esta semana.</p>}
+                        </Reorder.Group>
                       </div>
                     </div>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                );
+              }
 
-            {sortedItems.length > 0 && (
-              <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-                {sortedItems.map((item, index) => (
-                  <div key={item.id} className={cn("p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-accent/50 transition-colors", index !== sortedItems.length - 1 && "border-b border-border")}>
-                    <div className="w-24 shrink-0">
-                      <div className="text-sm font-semibold">{format(item.date, 'dd/MM/yyyy')}</div>
-                    </div>
-                    <div className="flex-1">
-                      {item.modalidade && (
-                        <div className={cn("text-xs italic mb-0.5", item.modalidade === 'Ponto Facultativo' ? 'text-orange-500' : item.modalidade === 'Feriado' ? 'text-red-500' : 'text-foreground')}>
-                          {item.modalidade}
-                          {['Ponto Facultativo', 'Feriado'].includes(item.modalidade) && ' (Sem Encontro)'}
-                        </div>
-                      )}
-                      <h4 className="font-medium text-foreground">{item.title}</h4>
-                      {item.description && <div className="text-sm text-muted-foreground mt-0.5">{item.description}</div>}
-                    </div>
-                    <div className="shrink-0 flex items-center gap-3">
-                      {item.startTime && (
-                        <span className="text-xs font-mono bg-muted px-2 py-1 rounded-md">
-                          {item.startTime}{item.startTime && item.endTime ? ' - ' : ''}{item.endTime}
-                        </span>
-                      )}
-                      {isAdmin && (
-                        <div className="flex items-center gap-0 shrink-0 border border-border/60 rounded-full p-0.5">
-                          <button onClick={() => openAddModal(item.date, item)} className="p-1.5 text-primary/70 hover:text-primary hover:bg-primary/10 rounded-full transition-colors">
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <div className="w-[1px] h-4 bg-white opacity-25 mx-1"></div>
-                          <button onClick={() => handleRemoveItem(item.id)} className="p-1.5 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors">
-                            <Trash className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+              return null;
+            })()}
           </motion.div>
         )}
+
+
+
 
         {/* Configurações removidas e movidas para Menu FAB */}
       </main>
 
-      {/* HIG / Apple Style Bottom Tab Bar */}
-      <div className="fixed bottom-0 left-0 right-0 glass-panel md:bottom-6 md:w-fit md:mx-auto md:rounded-3xl z-40 px-2 pb-[env(safe-area-inset-bottom)] md:pb-0 pt-2 pb-2">
-        <div className="flex items-center justify-around md:gap-2 w-full min-w-[320px]">
-          {(['calendar', 'list'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                "flex-1 md:flex-none md:w-24 flex items-center justify-center py-3 px-4 rounded-xl transition-all",
-                activeTab === tab ? "text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              {tab === 'calendar' && <CalendarCustomIcon className="w-7 h-7" />}
-              {tab === 'list' && <FunnelCustomIcon className="w-7 h-7" />}
-            </button>
-          ))}
-        </div>
-      </div>
+
 
       {/* Material 3 Bottom Sheet / Modal for Adding Event */}
       <AnimatePresence>
@@ -637,93 +926,294 @@ export default function App() {
               className="absolute inset-0 bottom-sheet-overlay pointer-events-auto" 
             />
             <motion.div 
-              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: "tween", duration: 0.3 }}
               className="w-full sm:max-w-md bg-background sm:rounded-[2rem] rounded-t-[2rem] shadow-2xl relative z-10 pointer-events-auto max-h-[90vh] overflow-y-auto"
             >
               <div className="sticky top-0 bg-background z-20 pt-5 pb-3 px-6 flex items-center justify-center border-b border-border">
                 <div className="w-12 h-1.5 bg-muted rounded-full absolute top-2 left-1/2 -translate-x-1/2 sm:hidden" />
-                <h2 className="text-lg font-bold uppercase text-[#00cc00]">{editingItem ? 'Editar Encontro' : 'Adicionar Encontro'}</h2>
+                <h2 className="text-lg font-bold uppercase text-[#00cc00ff]">
+                  {formCategory === 'responsavel' 
+                    ? (editingItem ? 'Editar Responsáveis' : 'Selecionar Responsáveis')
+                    : (editingItem ? 'Editar ' : 'Adicionar ') + (formCategory === 'orientacao' ? 'Orientação' : (formType === 'task' ? 'Tarefa' : 'Encontro'))
+                  }
+                </h2>
                 <button type="button" onClick={() => { setIsModalOpen(false); setEditingItem(null); }} className="p-2 bg-muted hover:bg-muted-foreground/20 rounded-full transition-colors absolute right-4">
                   <X className="w-5 h-5" />
                 </button>
               </div>
               
               <form key={editingItem?.id || 'new'} onSubmit={saveItem} className="p-5 space-y-4">
-                <div className="space-y-1">
-                  <label className="block text-center text-sm font-medium text-foreground">Modalidade</label>
-                  <div className="relative">
-                    <select 
-                      name="modalidade" 
-                      defaultValue={editingItem?.modalidade || ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const prev = selectedModalidade;
-                        setSelectedModalidade(val);
-                        
-                        if (val === 'Prática') {
-                          setFormTitle('Atividades no Centro');
-                        } else if (prev === 'Prática' && formTitle === 'Atividades no Centro') {
-                          setFormTitle('');
-                        }
-                      }}
-                      required
-                      className="w-full p-2.5 text-center flex justify-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all appearance-none cursor-pointer invalid:text-sm invalid:italic invalid:text-muted-foreground/70"
-                      style={{ textAlignLast: 'center' }}
+
+
+                <div className={cn("grid gap-4", (formCategory !== 'orientacao' && formCategory !== 'responsavel') ? "grid-cols-[80px_1fr]" : "grid-cols-1")}>
+                  {formCategory !== 'orientacao' && formCategory !== 'responsavel' && (
+                    <div className="space-y-1 relative">
+                      <label className="block text-center text-sm font-medium text-foreground">Dia</label>
+                      <button
+                        type="button"
+                        disabled={viewMode === 'DAY'}
+                        onClick={() => setIsDaySelectOpen(!isDaySelectOpen)}
+                        className={cn(
+                          "w-full p-2.5 flex items-center justify-between rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
+                          isDaySelectOpen && "border-primary ring-1 ring-primary/20"
+                        )}
+                      >
+                        <span className="flex-1 text-center font-bold">
+                          {selectedDate ? selectedDate.getDate().toString().padStart(2, '0') : '01'}
+                        </span>
+                        <ChevronDown className={cn("w-4 h-4 text-foreground/50 transition-transform", isDaySelectOpen && "rotate-180")} />
+                      </button>
+                      
+                      <input type="hidden" name="day" value={selectedDate ? selectedDate.getDate() : 1} />
+
+                      <AnimatePresence>
+                        {isDaySelectOpen && !['DAY'].includes(viewMode) && (
+                          <>
+                            <div className="fixed inset-0 z-30" onClick={() => setIsDaySelectOpen(false)} />
+                            <motion.div
+                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                              className="absolute left-0 right-0 z-40 mt-2 bg-card border border-border rounded-2xl shadow-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar"
+                            >
+                              <div className="p-1 grid grid-cols-4 gap-1">
+                                {(() => {
+                                  const days = (() => {
+                                    if (!selectedDate) return [];
+                                    if (viewMode === 'MONTH' || viewMode === 'YEAR') {
+                                      return eachDayOfInterval({ 
+                                        start: startOfMonth(selectedDate), 
+                                        end: endOfMonth(selectedDate) 
+                                      }).filter(isMonday).map(d => d.getDate());
+                                    }
+                                    return Array.from({ length: endOfMonth(selectedDate).getDate() }, (_, i) => i + 1);
+                                  })();
+                                  return days.map(d => (
+                                    <button
+                                      key={d}
+                                      type="button"
+                                      onClick={() => {
+                                        if (selectedDate) {
+                                          const newDate = new Date(selectedDate);
+                                          newDate.setDate(d);
+                                          setSelectedDate(newDate);
+                                        }
+                                        setIsDaySelectOpen(false);
+                                      }}
+                                      className={cn(
+                                        "p-2 text-sm rounded-lg transition-colors",
+                                        selectedDate?.getDate() === d 
+                                          ? "bg-primary text-primary-foreground font-bold" 
+                                          : "hover:bg-primary/10 text-foreground"
+                                      )}
+                                    >
+                                      {d.toString().padStart(2, '0')}
+                                    </button>
+                                  ));
+                                })()}
+                              </div>
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+
+                  <div className="space-y-1 relative">
+                    <label className="block text-center text-sm font-medium text-foreground">
+                      {formType === 'task' ? 'Departamento' : 'Modalidade'}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsModalidadeSelectOpen(!isModalidadeSelectOpen)}
+                      className={cn(
+                        "w-full p-2.5 flex items-center justify-between rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer",
+                        isModalidadeSelectOpen && "border-primary ring-1 ring-primary/20",
+                        !selectedModalidade && "text-muted-foreground/60 italic"
+                      )}
                     >
-                      <option value="" disabled hidden>Selecionar</option>
-                      <option value="Abertura" className="bg-card text-foreground italic text-base">Abertura</option>
-                      <option value="O Livro dos Espíritos" className="bg-card text-foreground italic text-base">O Livro dos Espíritos</option>
-                      <option value="Reforma Íntima" className="bg-card text-foreground italic text-base">Reforma Íntima</option>
-                      <option value="Especial" className="bg-card text-foreground italic text-base">Especial</option>
-                      <option value="Prática" className="bg-card text-foreground italic text-base">Prática</option>
-                      <option value="Expoente Espírita" className="bg-card text-foreground italic text-base">Expoente Espírita</option>
-                      <option value="Encerramento" className="bg-card text-foreground italic text-base">Encerramento</option>
-                      <option value="Ponto Facultativo" className="bg-card text-orange-500 italic text-base">Ponto Facultativo</option>
-                      <option value="Feriado" className="bg-card text-red-500 italic text-base">Feriado</option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-foreground/50 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <span className="flex-1 text-center font-bold">
+                        {selectedModalidade || 'Selecionar'}
+                      </span>
+                      <ChevronDown className={cn("w-4 h-4 text-foreground/50 transition-transform", isModalidadeSelectOpen && "rotate-180")} />
+                    </button>
+
+                    <input type="hidden" name="modalidade" value={selectedModalidade} />
+
+                    <AnimatePresence>
+                      {isModalidadeSelectOpen && (
+                        <>
+                          <div className="fixed inset-0 z-30" onClick={() => setIsModalidadeSelectOpen(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute left-0 right-0 z-40 mt-2 bg-card border border-border rounded-2xl shadow-xl overflow-hidden overflow-y-auto max-h-60"
+                          >
+                            <div className="p-1 flex flex-col gap-0.5">
+                              {(formType === 'task' 
+                                ? ['Apoio Operacional', 'Audiovisual', 'Divulgação', 'Informações', 'Recepção']
+                                : ['Abertura', 'O Livro dos Espíritos', 'Reforma Íntima', 'Especial', 'Prática', 'Encerramento', 'Ponto Facultativo', 'Feriado']
+                              ).map(opt => (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => {
+                                    const prev = selectedModalidade;
+                                    setSelectedModalidade(opt);
+                                    setIsModalidadeSelectOpen(false);
+                                    
+                                    if (formType === 'event') {
+                                      if (opt === 'Prática') {
+                                        setFormTitle('Atividades no Centro');
+                                      } else if (prev === 'Prática' && formTitle === 'Atividades no Centro') {
+                                        setFormTitle('');
+                                      }
+                                    }
+                                  }}
+                                  className={cn(
+                                    "px-4 py-2 text-sm text-center rounded-lg transition-colors font-medium",
+                                    selectedModalidade === opt 
+                                      ? "bg-primary/20 text-primary" 
+                                      : "hover:bg-primary/10 text-foreground"
+                                  )}
+                                >
+                                  {opt}
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
+
+                {formCategory === 'responsavel' && (
+                  <div className="space-y-1">
+                    <label className="block text-center text-sm font-medium text-foreground">Nome</label>
+                    <input 
+                      name="title" 
+                      value={formTitle} 
+                      onChange={(e) => setFormTitle(e.target.value)}
+                      required
+                      className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" 
+                    />
+                  </div>
+                )}
+
+                {(formCategory !== 'orientacao' && formCategory !== 'responsavel') ? (
+                  <div className="space-y-1">
+                    <label className="block text-center text-sm font-medium text-foreground">
+                      {formType === 'task' 
+                        ? (formCategory === 'checklist' ? 'Tarefa' : 'Assunto')
+                        : (['Ponto Facultativo', 'Feriado'].includes(selectedModalidade) ? 'Tipo' : 'Tema')}
+                    </label>
+                    <input 
+                      name="title" 
+                      value={formTitle} 
+                      onChange={(e) => setFormTitle(e.target.value)}
+                      required
+                      className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" 
+                    />
+                  </div>
+                ) : (
+                  formCategory === 'orientacao' && <input type="hidden" name="title" value="Orientação" />
+                )}
                 
-                <div className="space-y-1">
-                  <label className="block text-center text-sm font-medium text-foreground">
-                    {['Ponto Facultativo', 'Feriado'].includes(selectedModalidade) ? 'Tipo' : 'Tema'}
-                  </label>
-                  <input 
-                    name="title" 
-                    value={formTitle} 
-                    onChange={(e) => setFormTitle(e.target.value)}
-                    className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" 
-                  />
-                </div>
-                
-                {!['Ponto Facultativo', 'Feriado'].includes(selectedModalidade) && (
+                {formType === 'event' ? (
                   <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="block text-center text-sm font-medium text-foreground">Início</label>
-                        <input name="startTime" type="time" defaultValue={editingItem?.startTime || "00:00"} className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block text-center text-sm font-medium text-foreground">Término</label>
-                        <input name="endTime" type="time" defaultValue={editingItem?.endTime || "00:00"} className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" />
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <div className="flex-1 flex flex-col space-y-1">
-                        <label className="block text-center text-sm font-medium text-foreground">Chamada</label>
-                        <textarea name="description" defaultValue={editingItem?.description || ""} rows={2} className="flex-1 w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all resize-none" />
-                      </div>
-                      
-                      <div className="w-14 shrink-0 flex flex-col space-y-1">
-                        <label className="block text-center text-sm font-medium text-foreground">Capa</label>
-                        <button type="button" aria-label="Upload" className="flex-1 w-full rounded-xl bg-transparent border border-border flex items-center justify-center hover:bg-muted transition-colors text-[#00cc00] hover:opacity-80">
-                          <Upload className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
+                    {!['Ponto Facultativo', 'Feriado'].includes(selectedModalidade) && (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="block text-center text-sm font-medium text-foreground">Início</label>
+                            <input name="startTime" type="time" defaultValue={editingItem?.startTime || "00:00"} className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="block text-center text-sm font-medium text-foreground">Término</label>
+                            <input name="endTime" type="time" defaultValue={editingItem?.endTime || "00:00"} className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" />
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <div className="flex-1 flex flex-col space-y-1">
+                            <label className="block text-center text-sm font-medium text-foreground">Chamada</label>
+                            <textarea name="description" defaultValue={editingItem?.description || ""} rows={2} className="flex-1 w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all resize-none" />
+                          </div>
+                          
+                          <div className="w-14 shrink-0 flex flex-col space-y-1">
+                            <label className="block text-center text-sm font-medium text-foreground">Capa</label>
+                            <input 
+                              type="file" 
+                              ref={fileInputRef} 
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    const img = new Image();
+                                    img.onload = () => {
+                                      const canvas = document.createElement('canvas');
+                                      const MAX_SIZE = 400;
+                                      let width = img.width;
+                                      let height = img.height;
+                                      if (width > height) {
+                                        if (width > MAX_SIZE) {
+                                          height *= MAX_SIZE / width;
+                                          width = MAX_SIZE;
+                                        }
+                                      } else {
+                                        if (height > MAX_SIZE) {
+                                          width *= MAX_SIZE / height;
+                                          height = MAX_SIZE;
+                                        }
+                                      }
+                                      canvas.width = width;
+                                      canvas.height = height;
+                                      const ctx = canvas.getContext('2d');
+                                      ctx?.drawImage(img, 0, 0, width, height);
+                                      setFormCover(canvas.toDataURL('image/jpeg', 0.8));
+                                    };
+                                    img.src = reader.result as string;
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                            <button 
+                              type="button" 
+                              onClick={() => fileInputRef.current?.click()}
+                              className="flex-1 w-full rounded-xl bg-transparent border border-border flex items-center justify-center hover:bg-muted transition-colors text-[#00cc00ff] hover:opacity-80 overflow-hidden"
+                            >
+                              {formCover ? (
+                                <img src={formCover} alt="Preview" className="w-full h-full object-cover" />
+                              ) : (
+                                <Upload className="w-5 h-5" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </>
+                ) : (
+                  (formCategory !== 'checklist' && formCategory !== 'responsavel') ? (
+                    <div className="space-y-1">
+                      <label className="block text-center text-sm font-medium text-foreground">
+                        {formCategory === 'responsavel' ? 'Designação' : 'Orientação'}
+                      </label>
+                      <textarea 
+                        name="description" 
+                        defaultValue={editingItem?.description || ""} 
+                        rows={formCategory === 'orientacao' ? 4 : 2} 
+                        required
+                        className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all resize-none" 
+                      />
+                    </div>
+                  ) : null
                 )}
                 
                 <div className="pt-1 flex justify-center">
@@ -746,9 +1236,9 @@ export default function App() {
               className="absolute inset-0 bg-background/60 backdrop-blur-md"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
               className="relative w-full max-w-[300px] bg-card border border-border p-6 pt-10 rounded-[40px] shadow-2xl text-center"
             >
               {/* Back Button */}
@@ -756,7 +1246,7 @@ export default function App() {
                 onClick={() => setIsAuthModalOpen(false)}
                 className={cn(
                   "absolute top-6 left-6 p-1 transition-colors hover:text-primary",
-                  darkMode ? "text-white" : "text-[#09090B]"
+                  darkMode ? "text-[#f7f7f7ff]" : "text-[#09090B]"
                 )}
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -765,12 +1255,16 @@ export default function App() {
               <div className="text-primary mb-5 flex justify-center">
                 <AdminIcon className="w-9 h-9" unlocked={isAdmin} />
               </div>
-              <h2 className="text-xl font-display font-bold uppercase tracking-widest text-foreground mb-6">Área Administrativa</h2>
+              <h2 className="text-xl font-display font-bold uppercase tracking-widest text-foreground mb-1">Acesso Restrito</h2>
+              <p className="text-[10px] text-muted-foreground mb-6 leading-relaxed">
+                Digite a senha para entrar no<br />
+                <strong className="italic">MODO ADMINISTRADOR</strong>
+              </p>
               
               <div className="space-y-4">
                 <div className="relative">
                   <input
-                    type="password"
+                    type={showAdminPassword ? "text" : "password"}
                     autoFocus
                     placeholder=""
                     value={adminPassword}
@@ -780,7 +1274,7 @@ export default function App() {
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
-                        if (adminPassword === 'ADMSemeadores*') {
+                        if (adminPassword === 'admsemeadores*') {
                           setIsAdmin(true);
                           setIsAuthModalOpen(false);
                         } else {
@@ -789,10 +1283,17 @@ export default function App() {
                       }
                     }}
                     className={cn(
-                      "w-full bg-muted border rounded-2xl px-4 py-4 text-center text-lg tracking-widest focus:outline-none transition-all",
+                      "w-full bg-muted border rounded-2xl px-12 py-4 text-center text-lg tracking-widest focus:outline-none transition-all",
                       authError ? "border-destructive ring-1 ring-destructive" : "border-border focus:border-primary/50"
                     )}
                   />
+                  <button 
+                    type="button"
+                    onClick={() => setShowAdminPassword(!showAdminPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors z-10"
+                  >
+                    {showAdminPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                   {authError && (
                     <motion.p 
                       initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
@@ -806,23 +1307,98 @@ export default function App() {
                 <div className="pt-4">
                   <button 
                     onClick={() => {
-                      if (adminPassword === 'ADMSemeadores*') {
+                      if (adminPassword === 'admsemeadores*') {
                         setIsAdmin(true);
                         setIsAuthModalOpen(false);
                       } else {
                         setAuthError(true);
                       }
                     }}
-                    className="w-full bg-primary text-white font-display font-bold uppercase py-4 rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                    className="w-full bg-primary text-[#f7f7f7ff] font-display font-bold uppercase py-4 rounded-2xl shadow-lg shadow-primary/20 transition-all"
                   >
-                    Entrar
+                    Acessar
                   </button>
                 </div>
               </div>
             </motion.div>
           </div>
         )}
+        {/* Custom Deletion Confirmation Modal */}
+        {isDeleteConfirmOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsDeleteConfirmOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="relative bg-card border border-border w-full max-w-sm rounded-[2rem] p-8 shadow-2xl text-center"
+            >
+              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Trash className="w-8 h-8 text-destructive" />
+              </div>
+              <h3 className="text-xl font-bold mb-8">Excluir Item</h3>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setIsDeleteConfirmOpen(false)}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-muted hover:bg-muted-foreground/10 font-bold transition-all"
+                >
+                  CANCELAR
+                </button>
+                <button 
+                  onClick={() => {
+                    if (itemToDelete) {
+                      setItems(prev => prev.filter(i => i.id !== itemToDelete));
+                      setItemToDelete(null);
+                      setIsDeleteConfirmOpen(false);
+                    }
+                  }}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-destructive text-destructive-foreground hover:opacity-90 font-bold shadow-lg shadow-destructive/20 transition-all"
+                >
+                  EXCLUIR
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Image Preview Modal */}
+        {selectedImage && (
+          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 md:p-12">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setSelectedImage(null)}
+              className="absolute inset-0 bg-black/90 backdrop-blur-md cursor-pointer"
+            />
+            <motion.button 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setSelectedImage(null)}
+              className="relative z-10 mb-2 md:mb-6 p-2 text-[#f7f7f7ff]"
+              title="Fechar"
+            >
+              <X className="w-8 h-8 md:w-10 md:h-10 drop-shadow-md" />
+            </motion.button>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="relative z-10 w-full max-w-5xl max-h-[70vh] flex items-center justify-center rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+            >
+              <img src={selectedImage} alt="Preview" className="max-w-full max-h-full object-contain" />
+            </motion.div>
+            <motion.a 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              href={selectedImage} 
+              download="capa_evento.png"
+              onClick={() => setSelectedImage(null)}
+              className="relative z-10 mt-2 md:mt-6 p-2 text-[#f7f7f7ff]"
+              title="Baixar Imagem (PNG)"
+            >
+              <Download className="w-8 h-8 md:w-10 md:h-10 drop-shadow-md" />
+            </motion.a>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );
 }
+

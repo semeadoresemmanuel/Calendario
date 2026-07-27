@@ -97,7 +97,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
                 value={item}
                 transition={{ duration: 0 }}
                 className={cn(
-                  "flex items-start justify-between group gap-4 border border-border rounded-3xl p-6 transition-colors select-none shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing",
+                  "flex items-start justify-between group gap-4 border border-border rounded-3xl p-6 transition-colors select-none shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing touch-none",
                   darkMode ? "bg-[#262626]" : "bg-[#E2E2E2]"
                 )}
               >

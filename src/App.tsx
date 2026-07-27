@@ -38,15 +38,7 @@ import { MEMBER_BIRTHDAYS } from './constants/birthdays';
 export default function App() {
   // Navigation & Preferences State
   const [activeTab, setActiveTab] = useState<Tab>('cronograma');
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('smd_view');
-      if (saved) {
-        try { return JSON.parse(saved); } catch (e) { return 'DAY'; }
-      }
-    }
-    return 'DAY';
-  });
+  const [viewMode, setViewMode] = useState<ViewMode>('DAY');
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('smd_theme');
@@ -56,6 +48,12 @@ export default function App() {
     }
     return false;
   });
+
+  useEffect(() => {
+    if (activeTab === 'cronograma') {
+      setViewMode('DAY');
+    }
+  }, [activeTab]);
 
   // Admin Access State
   const [isAdmin, setIsAdmin] = useState(() => {

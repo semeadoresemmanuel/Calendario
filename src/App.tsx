@@ -142,10 +142,13 @@ export default function App() {
   // Theme & View Preferences Persistence
   useEffect(() => { 
     localStorage.setItem('smd_theme', JSON.stringify(darkMode)); 
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
     if (darkMode) {
       document.documentElement.classList.add('dark');
+      if (themeMeta) themeMeta.setAttribute('content', '#121212');
     } else {
       document.documentElement.classList.remove('dark');
+      if (themeMeta) themeMeta.setAttribute('content', '#f7f7f7');
     }
   }, [darkMode]);
 

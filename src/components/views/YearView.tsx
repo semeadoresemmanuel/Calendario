@@ -91,9 +91,10 @@ export const YearView: React.FC<YearViewProps> = ({
       <div className="mt-8 mb-4 flex justify-center w-full">
         {(() => {
           const pdfName = darkMode ? "Calendário 2026 (Dark Mode).pdf" : "Calendário 2026 (Light Mode).pdf";
+          const pdfUrl = darkMode ? "/calendario_2026_dark.pdf" : "/calendario_2026_light.pdf";
           return (
             <a 
-              href={`/${encodeURIComponent(pdfName)}`} 
+              href={pdfUrl} 
               download={pdfName} 
               className="group flex flex-col items-center gap-3 cursor-pointer w-fit mx-auto"
             >

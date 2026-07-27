@@ -89,22 +89,27 @@ export const YearView: React.FC<YearViewProps> = ({
       </div>
       
       <div className="mt-8 mb-4 flex justify-center w-full">
-        <a 
-          href={darkMode ? "/calendario_2026_dark.pdf" : "/calendario_2026_light.pdf"} 
-          download="Calendário 2026.pdf" 
-          className="group flex flex-col items-center gap-3 cursor-pointer w-fit mx-auto"
-        >
-          <img 
-            src={pdfDownloadIcon} 
-            alt="Download PDF" 
-            className="w-8 h-8 theme-icon-green transition-all duration-300 group-hover:drop-shadow-[0_0_8px_var(--primary)] group-active:drop-shadow-[0_0_8px_var(--primary)]" 
-          />
-          <div 
-            className="flex items-center justify-center px-6 py-2.5 bg-transparent border border-primary rounded-full transition-all duration-300 group-hover:shadow-[0_0_15px_var(--primary)] group-active:shadow-[0_0_15px_var(--primary)] group-hover:bg-primary/10"
-          >
-            <span className="text-xs font-bold uppercase tracking-wider text-primary">BAIXAR CALENDÁRIO</span>
-          </div>
-        </a>
+        {(() => {
+          const pdfName = darkMode ? "Calendário 2026 (Dark Mode).pdf" : "Calendário 2026 (Light Mode).pdf";
+          return (
+            <a 
+              href={`/${encodeURIComponent(pdfName)}`} 
+              download={pdfName} 
+              className="group flex flex-col items-center gap-3 cursor-pointer w-fit mx-auto"
+            >
+              <img 
+                src={pdfDownloadIcon} 
+                alt="Download PDF" 
+                className="w-8 h-8 theme-icon-green transition-all duration-300 group-hover:drop-shadow-[0_0_8px_var(--primary)] group-active:drop-shadow-[0_0_8px_var(--primary)]" 
+              />
+              <div 
+                className="flex items-center justify-center px-6 py-2.5 bg-transparent border border-primary rounded-full transition-all duration-300 group-hover:shadow-[0_0_15px_var(--primary)] group-active:shadow-[0_0_15px_var(--primary)] group-hover:bg-primary/10"
+              >
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">BAIXAR CALENDÁRIO</span>
+              </div>
+            </a>
+          );
+        })()}
       </div>
     </>
   );

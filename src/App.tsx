@@ -283,12 +283,16 @@ export default function App() {
 
   const handleReorder = useCallback((newOrder: CalendarItem[]) => {
     setItems(prev => {
+      const updatedNewOrder = newOrder.map((item, index) => ({
+        ...item,
+        order: index
+      }));
       const next = [...prev];
-      const indices = newOrder.map(item => prev.findIndex(i => i.id === item.id)).sort((a, b) => a - b);
+      const indices = updatedNewOrder.map(item => prev.findIndex(i => i.id === item.id)).sort((a, b) => a - b);
       indices.forEach((globalIndex, i) => {
         if (globalIndex !== -1) {
-          next[globalIndex] = newOrder[i];
-          const updatedItem = newOrder[i];
+          next[globalIndex] = updatedNewOrder[i];
+          const updatedItem = updatedNewOrder[i];
           setDoc(doc(db, 'items', updatedItem.id), { ...updatedItem, date: updatedItem.date.toISOString() });
         }
       });

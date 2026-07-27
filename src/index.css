@@ -193,6 +193,7 @@
     @apply border-border;
   }
   html, body {
+    @apply bg-background text-foreground font-sans;
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
     overscroll-behavior-y: none; /* Block native pull-to-refresh */
@@ -201,7 +202,6 @@
     display: none; /* Chrome, Safari, Opera */
   }
   body {
-    @apply bg-background text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
   }
   html:not(.dark) .theme-icon-green {

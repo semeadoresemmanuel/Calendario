@@ -90,43 +90,42 @@ export const TasksView: React.FC<TasksViewProps> = ({
         )}
         
         {checklist.length > 0 ? (
-          <Reorder.Group axis="y" values={checklist} onReorder={onReorder} transition={{ duration: 0 }} className="space-y-3 flex-1 flex flex-col">
-            {checklist.map((item) => (
-              <Reorder.Item 
-                key={item.id} 
-                value={item}
-                transition={{ duration: 0 }}
-                className={cn(
-                  "flex items-start justify-between group gap-4 border border-border rounded-3xl p-6 transition-colors select-none shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing touch-none",
-                  darkMode ? "bg-[#262626]" : "bg-[#E2E2E2]"
-                )}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-sm font-bold text-foreground">
-                      {item.title}
-                    </span>
-                    {item.description && (
-                      <span className="text-xs text-muted-foreground leading-relaxed">
-                        {formatDescription(item)}
-                      </span>
-                    )}
-                    {(item.startTime || item.endTime) && (
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-primary" />
-                        <span>{item.startTime}{item.startTime && item.endTime ? ' - ' : ''}{item.endTime}</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex flex-col items-end gap-3 shrink-0 select-none">
-                  {item.modalidade && (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-black bg-primary/10 text-primary tracking-wider whitespace-nowrap">
-                      {item.modalidade}
-                    </span>
+          isAdmin ? (
+            <Reorder.Group axis="y" values={checklist} onReorder={onReorder} className="space-y-3 flex-1 flex flex-col">
+              {checklist.map((item) => (
+                <Reorder.Item 
+                  key={item.id} 
+                  value={item}
+                  className={cn(
+                    "flex items-start justify-between group gap-4 border border-border rounded-3xl p-6 transition-colors select-none shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing touch-none",
+                    darkMode ? "bg-[#262626]" : "bg-[#E2E2E2]"
                   )}
-                  {isAdmin && (
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-sm font-bold text-foreground">
+                        {item.title}
+                      </span>
+                      {item.description && (
+                        <span className="text-xs text-muted-foreground leading-relaxed">
+                          {formatDescription(item)}
+                        </span>
+                      )}
+                      {(item.startTime || item.endTime) && (
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-primary" />
+                          <span>{item.startTime}{item.startTime && item.endTime ? ' - ' : ''}{item.endTime}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col items-end gap-3 shrink-0 select-none">
+                    {item.modalidade && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-black bg-primary/10 text-primary tracking-wider whitespace-nowrap">
+                        {item.modalidade}
+                      </span>
+                    )}
                     <div 
                       className={cn(
                         "flex items-center gap-3 px-3 py-1.5 bg-transparent border-[0.5px] rounded-full cursor-default",
@@ -159,11 +158,50 @@ export const TasksView: React.FC<TasksViewProps> = ({
                         <Trash className="w-3.5 h-3.5" />
                       </button>
                     </div>
+                  </div>
+                </Reorder.Item>
+              ))}
+            </Reorder.Group>
+          ) : (
+            <div className="space-y-3 flex-1 flex flex-col">
+              {checklist.map((item) => (
+                <div 
+                  key={item.id}
+                  className={cn(
+                    "flex items-start justify-between group gap-4 border border-border rounded-3xl p-6 transition-colors select-none shadow-sm hover:shadow-md",
+                    darkMode ? "bg-[#262626]" : "bg-[#E2E2E2]"
                   )}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-sm font-bold text-foreground">
+                        {item.title}
+                      </span>
+                      {item.description && (
+                        <span className="text-xs text-muted-foreground leading-relaxed">
+                          {formatDescription(item)}
+                        </span>
+                      )}
+                      {(item.startTime || item.endTime) && (
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-primary" />
+                          <span>{item.startTime}{item.startTime && item.endTime ? ' - ' : ''}{item.endTime}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col items-end gap-3 shrink-0 select-none">
+                    {item.modalidade && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-black bg-primary/10 text-primary tracking-wider whitespace-nowrap">
+                        {item.modalidade}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </Reorder.Item>
-            ))}
-          </Reorder.Group>
+              ))}
+            </div>
+          )
         ) : (
           !isAdmin && (
             <div className={cn("border border-border rounded-3xl p-4 sm:p-6 shadow-sm text-center", darkMode ? "bg-[#262626]" : "bg-[#E2E2E2]")}>

@@ -90,11 +90,12 @@ export const TasksView: React.FC<TasksViewProps> = ({
         )}
         
         {checklist.length > 0 ? (
-          <Reorder.Group axis="y" values={checklist} onReorder={onReorder} className="space-y-3 flex-1 flex flex-col">
+          <Reorder.Group axis="y" values={checklist} onReorder={onReorder} transition={{ duration: 0 }} className="space-y-3 flex-1 flex flex-col">
             {checklist.map((item) => (
               <Reorder.Item 
                 key={item.id} 
                 value={item}
+                transition={{ duration: 0 }}
                 className={cn(
                   "flex items-start justify-between group gap-4 border border-border rounded-3xl p-6 transition-colors select-none shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing",
                   darkMode ? "bg-[#262626]" : "bg-[#E2E2E2]"

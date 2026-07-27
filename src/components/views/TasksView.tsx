@@ -17,6 +17,12 @@ interface TasksViewProps {
   onReorder: (newOrder: CalendarItem[]) => void;
 }
 
+const DEPARTMENT_ORDER: Record<string, number> = {
+  'Música': 1,
+  'Recepção': 2,
+  'Som': 3,
+};
+
 export const TasksView: React.FC<TasksViewProps> = ({
   items,
   darkMode,
@@ -35,7 +41,16 @@ export const TasksView: React.FC<TasksViewProps> = ({
     isSameDay(startOfWeek(i.date, { weekStartsOn: 1 }), activeTaskDate)
   );
 
-  const checklist = weekItems.filter(i => i.category === 'checklist');
+  const checklist = weekItems
+    .filter(i => i.category === 'checklist')
+    .sort((a, b) => {
+      const orderA = DEPARTMENT_ORDER[a.modalidade || ''] ?? 99;
+      const orderB = DEPARTMENT_ORDER[b.modalidade || ''] ?? 99;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
 
   return (
     <motion.div 

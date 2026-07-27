@@ -25,7 +25,7 @@ const MONDAYS_DATA = Object.freeze([
   { date: '2026-07-06', type: 'normal', tematica: 'Atividades no Centro', modalidade: 'Prática' },
   { date: '2026-07-13', type: 'normal', tematica: 'Parte II, Capítulo VI (Da Vida Espírita) - Percepções, Sensações e Sofrimentos dos Espíritos', modalidade: 'O Livro dos Espíritos' },
   { date: '2026-07-20', type: 'normal', tematica: 'A DEFINIR', modalidade: 'Reforma Íntima' },
-  { date: '2026-07-27', type: 'normal', tematica: 'A DEFINIR', modalidade: 'Especial' },
+  { date: '2026-07-27', type: 'normal', tematica: 'Atividades no Centro', modalidade: 'Prática' },
   { date: '2026-08-03', type: 'normal', tematica: 'Atividades no Centro', modalidade: 'Prática' },
   { date: '2026-08-10', type: 'normal', tematica: 'Parte II, Capítulo VI (Da Vida Espírita) - Ensaio Teórico da Sensação nos Espíritos', modalidade: 'O Livro dos Espíritos' },
   { date: '2026-08-17', type: 'normal', tematica: 'PRIORIDADES E DECISÕES', modalidade: 'Reforma Íntima' },

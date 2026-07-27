@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
+import adminPadlock from '../../elements/admin_padlock.svg';
+import eyeIcon from '../../elements/eye.svg';
+import closedEyeIcon from '../../elements/closed_eye.svg';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -21,6 +24,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   setAuthError,
   setIsAdmin,
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -39,28 +44,67 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-sm p-6 bg-card border border-border rounded-3xl shadow-xl space-y-4"
+        className="w-[270px] h-[340px] px-6 py-7 bg-card border border-border rounded-[2rem] shadow-xl flex flex-col justify-between relative"
       >
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-foreground">Acesso Administrador</h3>
-          <button onClick={onClose} className="p-1 rounded-full text-foreground/60 hover:text-foreground cursor-pointer">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <input 
-              type="password" 
-              placeholder="Digite a senha..."
-              value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
-              className="w-full p-3 rounded-xl bg-muted/50 border border-border text-foreground outline-none focus:border-primary"
-              autoFocus
-            />
-            {authError && <p className="text-xs text-destructive">Senha incorreta!</p>}
+        {/* Minimalist Back Arrow (<) at top left */}
+        <button 
+          onClick={onClose} 
+          className="p-1 rounded-full text-foreground/60 hover:text-foreground cursor-pointer absolute top-4 left-4"
+          title="Voltar"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        {/* Top Centered Lock & Title Block */}
+        <div className="flex flex-col items-center text-center pt-2">
+          <div className="flex items-center justify-center">
+            <img src={adminPadlock} className="w-9 h-9 theme-icon-green" alt="Cadeado" />
           </div>
-          <button type="submit" className="w-full py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:opacity-90 transition-opacity cursor-pointer">
-            Entrar
+
+          {/* Text block moved lower */}
+          <div className="flex flex-col items-center space-y-1 mt-8">
+            <h3 className="text-lg font-bold uppercase text-foreground tracking-wider leading-tight">
+              ACESSO RESTRITO
+            </h3>
+            <p className="text-xs italic text-muted-foreground">
+              Digite a senha para entrar no
+            </p>
+            <p className="text-xs font-bold italic text-primary uppercase tracking-wide">
+              MODO ADMINISTRADOR
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4 w-full">
+          <div className="space-y-1">
+            <div className="relative">
+              <input 
+                type={showPassword ? "text" : "password"} 
+                value={adminPassword}
+                onChange={(e) => {
+                  setAdminPassword(e.target.value);
+                  if (authError) setAuthError(false);
+                }}
+                className="w-full p-3 pr-10 rounded-xl bg-muted/50 border border-border text-foreground italic outline-none focus:border-primary transition-colors text-center"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-80 transition-opacity cursor-pointer p-1"
+                title={showPassword ? "Ocultar senha" : "Visualizar senha"}
+              >
+                <img 
+                  src={showPassword ? eyeIcon : closedEyeIcon} 
+                  className="w-4 h-4 theme-icon-green" 
+                  alt={showPassword ? "Senha visível" : "Senha oculta"} 
+                />
+              </button>
+            </div>
+            {authError && <p className="text-xs text-destructive text-center pt-1 font-medium">Senha incorreta!</p>}
+          </div>
+          <button type="submit" className="w-full py-3 bg-primary text-primary-foreground font-bold uppercase rounded-xl hover:opacity-90 transition-opacity cursor-pointer shadow-md tracking-wider">
+            ACESSAR
           </button>
         </form>
       </motion.div>

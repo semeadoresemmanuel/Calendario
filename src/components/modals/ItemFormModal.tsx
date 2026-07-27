@@ -129,7 +129,65 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
         <form onSubmit={onSave} className="p-6 space-y-4 overflow-y-auto no-scrollbar flex-1">
           {isTaskForm ? (
             <div className="flex flex-col gap-4">
-              {/* 1. Tarefa / Assunto */}
+              {/* 1. Departamento */}
+              <div className="space-y-1 relative w-full">
+                <label className="block text-center text-sm font-medium text-foreground">Departamento</label>
+                <button
+                  type="button"
+                  onClick={() => setIsModalidadeSelectOpen(!isModalidadeSelectOpen)}
+                  className={cn(
+                    "w-full p-2.5 flex items-center justify-between rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer",
+                    isModalidadeSelectOpen && "border-primary ring-1 ring-primary/20",
+                    !selectedModalidade && "text-muted-foreground/60 italic"
+                  )}
+                >
+                  <span className={cn("flex-1 text-center", selectedModalidade ? "font-bold" : "font-normal")}>
+                    {selectedModalidade || 'Selecionar'}
+                  </span>
+                  <ChevronDown className={cn("w-4 h-4 text-foreground/50 transition-transform", isModalidadeSelectOpen && "rotate-180")} />
+                </button>
+                <input type="hidden" name="modalidade" value={selectedModalidade} />
+                <AnimatePresence>
+                  {isModalidadeSelectOpen && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setIsModalidadeSelectOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute left-0 right-0 z-40 mt-2 bg-card border border-border rounded-2xl shadow-xl overflow-hidden"
+                      >
+                        <div className="p-1 flex flex-col gap-1">
+                          {[...TASK_DEPARTMENTS].sort((a, b) => a.localeCompare(b, 'pt-BR')).map(opt => (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                if (selectedModalidade === opt) {
+                                  setSelectedModalidade('');
+                                } else {
+                                  setSelectedModalidade(opt);
+                                }
+                                setIsModalidadeSelectOpen(false);
+                              }}
+                              className={cn(
+                                "px-4 py-2 text-sm text-center rounded-lg transition-colors font-medium cursor-pointer",
+                                selectedModalidade === opt 
+                                  ? "bg-primary text-primary-foreground font-bold" 
+                                  : "hover:bg-primary/10 text-foreground"
+                              )}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* 2. Tarefa / Assunto */}
               <div className="space-y-1 w-full">
                 <label className="block text-center text-sm font-medium text-foreground">
                   {formCategory === 'checklist' ? 'Tarefa' : 'Assunto'}
@@ -141,70 +199,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                   required
                   className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" 
                 />
-              </div>
-
-              {/* 2. Departamento */}
-              <div className="space-y-1 relative w-full">
-                <label className="block text-center text-sm font-medium text-foreground">Departamento</label>
-                <button
-                  type="button"
-                  onClick={() => setIsModalidadeSelectOpen(!isModalidadeSelectOpen)}
-                  className={cn(
-                    "w-full p-2.5 flex items-center justify-center rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer",
-                    isModalidadeSelectOpen && "border-primary ring-1 ring-primary/20",
-                    !selectedModalidade && "text-muted-foreground/60 italic"
-                  )}
-                >
-                  <span className={cn("flex-1 text-center", selectedModalidade ? "font-bold" : "font-normal")}>
-                    {selectedModalidade || 'Selecionar'}
-                  </span>
-                </button>
-                <input type="hidden" name="modalidade" value={selectedModalidade} />
-                <AnimatePresence>
-                  {isModalidadeSelectOpen && (
-                    <>
-                      <div className="fixed inset-0 z-[240] bg-black/40 backdrop-blur-[4px]" onClick={() => setIsModalidadeSelectOpen(false)} />
-                      <div className="fixed inset-0 z-[250] flex items-center justify-center p-5 pointer-events-none">
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          className="w-[90%] max-w-[360px] bg-card border border-border rounded-[2rem] shadow-2xl p-6 flex flex-col items-center gap-6 pointer-events-auto"
-                        >
-                          <div className="flex items-center justify-center gap-4 py-2 select-none">
-                            {TASK_DEPARTMENTS.map((opt, index) => {
-                              const isSelected = selectedModalidade === opt;
-                              return (
-                                <React.Fragment key={opt}>
-                                  {index > 0 && <span className="text-border select-none">|</span>}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (selectedModalidade === opt) {
-                                        setSelectedModalidade('');
-                                      } else {
-                                        setSelectedModalidade(opt);
-                                      }
-                                      setIsModalidadeSelectOpen(false);
-                                    }}
-                                    className={cn(
-                                      "text-sm font-bold uppercase transition-all duration-200 cursor-pointer",
-                                      isSelected 
-                                        ? "text-primary scale-110 font-black" 
-                                        : "text-muted-foreground hover:text-foreground"
-                                    )}
-                                  >
-                                    {opt}
-                                  </button>
-                                </React.Fragment>
-                              );
-                            })}
-                          </div>
-                        </motion.div>
-                      </div>
-                    </>
-                  )}
-                </AnimatePresence>
               </div>
 
               {/* 3. Membro(s) */}

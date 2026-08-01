@@ -864,7 +864,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               type="submit"
               className="w-2/3 max-w-[240px] py-2.5 bg-primary text-primary-foreground font-bold rounded-xl hover:opacity-90 transition-opacity uppercase tracking-wider text-sm shadow-md cursor-pointer"
             >
-              Salvar
+              {editingItem ? 'Salvar' : 'Adicionar'}
             </button>
           </div>
         </form>

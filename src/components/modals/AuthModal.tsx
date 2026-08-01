@@ -104,7 +104,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {authError && <p className="text-xs text-destructive text-center pt-1 font-medium">Senha incorreta!</p>}
           </div>
           <button type="submit" className="w-full py-3 bg-primary text-primary-foreground font-bold uppercase rounded-xl hover:opacity-90 transition-opacity cursor-pointer shadow-md tracking-wider">
-            ACESSAR
+            ENTRAR
           </button>
         </form>
       </motion.div>

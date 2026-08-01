@@ -21,6 +21,7 @@ export const MEMBER_BIRTHDAYS: MemberBirthday[] = [
   { name: 'Elizangela', day: 5, month: 7 },
   { name: 'Carla', day: 17, month: 7 },
   { name: 'Caio', day: 4, month: 8 },
+  { name: 'C.E. Emmanuel', day: 3, month: 9 },
   { name: 'Ruth', day: 25, month: 9 },
   { name: 'Wallace', day: 12, month: 10 },
   { name: 'Maria de Lourdes', day: 14, month: 10 },

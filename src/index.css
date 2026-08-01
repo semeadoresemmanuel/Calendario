@@ -111,6 +111,7 @@
 
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
   
   --color-ring: var(--ring);
 
@@ -140,7 +141,7 @@
     --border: #e4e4e7;
     --input: #e4e4e7;
 
-    --primary: #009c00;
+    --primary: #006400;
     --primary-foreground: #ffffff;
 
     --secondary: #f4f4f5;
@@ -149,10 +150,12 @@
     --accent: #f4f4f5;
     --accent-foreground: #18181b;
 
-    --destructive: #ef4444;
+    --destructive: #D90429;
     --destructive-foreground: #fafafa;
 
-    --ring: #009c00;
+    --warning: #E67E22;
+
+    --ring: #006400;
     --radius: 0.75rem;
   }
 
@@ -172,19 +175,21 @@
     --border: #2c2c2e;
     --input: #2c2c2e;
 
-    --primary: #00cc00ff;
-    --primary-foreground: #f7f7f7ff;
+    --primary: #00cc00;
+    --primary-foreground: #f7f7f7;
 
     --secondary: #2c2c2e;
-    --secondary-foreground: #f7f7f7ff;
+    --secondary-foreground: #f7f7f7;
 
     --accent: #2c2c2e;
-    --accent-foreground: #f7f7f7ff;
+    --accent-foreground: #f7f7f7;
 
-    --destructive: #ff453a;
-    --destructive-foreground: #f7f7f7ff;
+    --destructive: #FF4D4D;
+    --destructive-foreground: #f7f7f7;
 
-    --ring: #00cc00ff;
+    --warning: #FF6B00;
+
+    --ring: #00cc00;
   }
 }
 
@@ -205,7 +210,7 @@
     -webkit-font-smoothing: antialiased;
   }
   html:not(.dark) .theme-icon-green {
-    filter: brightness(0.7647) !important;
+    filter: brightness(0.4902) !important;
   }
 }
 

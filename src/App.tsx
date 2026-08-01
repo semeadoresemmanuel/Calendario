@@ -69,7 +69,7 @@ export default function App() {
   // Data & Modal States
   const [items, setItems] = useState<CalendarItem[]>([]);
   const [selectedMonthInYearView, setSelectedMonthInYearView] = useState<Date | null>(null);
-  const [currentDate] = useState(() => {
+  const [currentDate, setCurrentDate] = useState<Date>(() => {
     const today = new Date();
     const monthEnd = endOfMonth(today);
     const mondays = eachDayOfInterval({ start: startOfMonth(today), end: monthEnd }).filter(d => isMonday(d));
@@ -154,6 +154,28 @@ export default function App() {
     localStorage.setItem('smd_view', JSON.stringify(viewMode)); 
   }, [viewMode]);
 
+  // Derived Date Collections
+  const displayDates = useMemo(() => {
+    try {
+      if (viewMode === 'YEAR' && selectedMonthInYearView) {
+        const interval = eachDayOfInterval({ 
+          start: startOfMonth(selectedMonthInYearView), 
+          end: endOfMonth(selectedMonthInYearView) 
+        });
+        return activeTab === 'cronograma' ? interval.filter(d => isMonday(d)) : interval;
+      } else if (viewMode === 'MONTH') {
+        const interval = eachDayOfInterval({ 
+          start: startOfMonth(currentDate), 
+          end: endOfMonth(currentDate) 
+        });
+        return activeTab === 'cronograma' ? interval.filter(d => isMonday(d)) : interval;
+      } else if (viewMode === 'DAY') {
+        return [new Date()];
+      }
+    } catch (e) { return []; }
+    return [];
+  }, [viewMode, selectedMonthInYearView, activeTab, currentDate]);
+
   // Lock body scroll on modal open
   useEffect(() => {
     const isAnyModalOpen = isModalOpen || isBirthdayModalOpen || isFutureTasksModalOpen || isAuthModalOpen || isDeleteConfirmOpen || !!selectedImage;
@@ -169,34 +191,6 @@ export default function App() {
       document.body.style.overflow = '';
     };
   }, [isModalOpen, isBirthdayModalOpen, isFutureTasksModalOpen, isAuthModalOpen, isDeleteConfirmOpen, selectedImage]);
-
-  // Derived Date Collections
-  const displayDates = useMemo(() => {
-    try {
-      const today = currentDate;
-      const monthEnd = endOfMonth(today);
-      const mondays = eachDayOfInterval({ start: startOfMonth(today), end: monthEnd }).filter(d => isMonday(d));
-      const lastMonday = mondays[mondays.length - 1] || today;
-      const effectiveMonthDate = isAfter(today, endOfDay(lastMonday)) ? startOfMonth(addMonths(today, 1)) : today;
-      
-      if (viewMode === 'YEAR' && selectedMonthInYearView) {
-        const interval = eachDayOfInterval({ 
-          start: startOfMonth(selectedMonthInYearView), 
-          end: endOfMonth(selectedMonthInYearView) 
-        });
-        return activeTab === 'cronograma' ? interval.filter(d => isMonday(d)) : interval;
-      } else if (viewMode === 'MONTH') {
-        const interval = eachDayOfInterval({ 
-          start: startOfMonth(effectiveMonthDate), 
-          end: endOfMonth(effectiveMonthDate) 
-        });
-        return activeTab === 'cronograma' ? interval.filter(d => isMonday(d)) : interval;
-      } else if (viewMode === 'DAY') {
-        return [new Date()];
-      }
-    } catch (e) { return []; }
-    return [];
-  }, [viewMode, selectedMonthInYearView, activeTab, currentDate]);
 
   const yearMonths = useMemo(() => {
     return eachMonthOfInterval({
@@ -301,7 +295,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 font-sans pb-12 select-none">
+    <div className="min-h-[100dvh] flex flex-col bg-background text-foreground transition-colors duration-300 font-sans select-none">
       {/* Top Header Navigation */}
       <Header
         activeTab={activeTab}
@@ -315,12 +309,12 @@ export default function App() {
         setAuthError={setAuthError}
       />
 
-      <main className="max-w-5xl mx-auto px-4 md:px-6 pt-[16.5px] flex flex-col items-center w-full">
+      <main className="max-w-5xl mx-auto px-4 md:px-6 pt-5 pb-12 flex flex-col items-center w-full flex-1">
         {/* Secondary Navigation - Cronograma Controls */}
         {activeTab === 'cronograma' && (
-          <div className="w-full mb-6 space-y-4 flex flex-col items-center">
+          <div className="w-full mb-6 flex flex-col items-center">
             {/* View Selector Tabs: DIA / MÊS / ANO */}
-            <div className="flex justify-center w-full">
+            <div className={cn("flex justify-center w-full", viewMode === 'DAY' ? "mb-0" : "mb-5")}>
               <div className={cn(
                 "p-[3px] flex items-center gap-0.5 border border-border/40 shadow-inner rounded-full h-[30px]",
                 darkMode ? "bg-[#262626]" : "bg-[#E2E2E2]"
@@ -359,52 +353,66 @@ export default function App() {
 
             {/* Birthdays Badge in Month or Year View */}
             {(viewMode === 'MONTH' || (viewMode === 'YEAR' && selectedMonthInYearView)) && (
-              <div className="relative w-full flex flex-col items-center justify-center mb-4 pb-2 border-b border-border">
-                {MEMBER_BIRTHDAYS.some(b => b.month === ((viewMode === 'YEAR' && selectedMonthInYearView) ? selectedMonthInYearView : currentDate).getMonth()) && (
-                  <button 
-                    onClick={() => setIsBirthdayModalOpen(true)}
-                    className="absolute right-2 md:right-4 top-1.5 p-1 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center hover:bg-card"
-                    title="Aniversariantes do Mês"
-                  >
-                    <img 
-                      src={birthdayIcon} 
-                      className="w-7 h-7 theme-icon-green object-contain" 
-                      alt="Aniversariantes" 
-                    />
-                  </button>
-                )}
-                <div className="flex items-center gap-3">
-                  {viewMode === 'YEAR' && (
+              <div className="relative w-full flex flex-col items-center justify-center pb-5 border-b border-border">
+                <div className="flex items-center justify-center w-full relative">
+                  <div className="flex items-center gap-4">
+                    {(viewMode === 'MONTH' || (viewMode === 'YEAR' && selectedMonthInYearView)) && (
+                      <button 
+                        onClick={() => {
+                          if (viewMode === 'YEAR' && selectedMonthInYearView) {
+                            setSelectedMonthInYearView(addMonths(selectedMonthInYearView, -1));
+                          } else {
+                            setCurrentDate(prev => addMonths(prev, -1));
+                          }
+                        }} 
+                        className="p-1 rounded-full text-foreground hover:text-primary transition-colors cursor-pointer"
+                        title="Mês Anterior"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                    )}
+
+                    <div className="flex flex-col items-center">
+                      <span className="text-xl md:text-2xl font-black font-display text-primary uppercase tracking-tight">
+                        {format((viewMode === 'YEAR' && selectedMonthInYearView) ? selectedMonthInYearView : currentDate, 'MMMM', { locale: ptBR })}
+                      </span>
+                      <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase mt-0.5">
+                        {format(viewMode === 'YEAR' ? selectedMonthInYearView! : currentDate, 'yyyy')}
+                      </span>
+                    </div>
+
+                    {(viewMode === 'MONTH' || (viewMode === 'YEAR' && selectedMonthInYearView)) && (
+                      <button 
+                        onClick={() => {
+                          if (viewMode === 'YEAR' && selectedMonthInYearView) {
+                            setSelectedMonthInYearView(addMonths(selectedMonthInYearView, 1));
+                          } else {
+                            setCurrentDate(prev => addMonths(prev, 1));
+                          }
+                        }} 
+                        className="p-1 rounded-full text-foreground hover:text-primary transition-colors cursor-pointer"
+                        title="Próximo Mês"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Birthday Icon positioned at the far right */}
+                  {MEMBER_BIRTHDAYS.some(b => b.month === ((viewMode === 'YEAR' && selectedMonthInYearView) ? selectedMonthInYearView : currentDate).getMonth()) && (
                     <button 
-                      onClick={() => {
-                        if (selectedMonthInYearView) {
-                          setSelectedMonthInYearView(addMonths(selectedMonthInYearView, -1));
-                        }
-                      }} 
-                      className="p-1 rounded-full text-foreground hover:text-primary transition-colors cursor-pointer"
+                      onClick={() => setIsBirthdayModalOpen(true)}
+                      className="absolute right-0 sm:right-2 md:right-4 top-1/2 -translate-y-1/2 p-1 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center hover:bg-card"
+                      title="Aniversariantes do Mês"
                     >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                  )}
-                  <span className="text-xl md:text-2xl font-black font-display text-primary uppercase tracking-tight">
-                    {format((viewMode === 'YEAR' && selectedMonthInYearView) ? selectedMonthInYearView : currentDate, 'MMMM', { locale: ptBR })}
-                  </span>
-                  {viewMode === 'YEAR' && (
-                    <button 
-                      onClick={() => {
-                        if (selectedMonthInYearView) {
-                          setSelectedMonthInYearView(addMonths(selectedMonthInYearView, 1));
-                        }
-                      }} 
-                      className="p-1 rounded-full text-foreground hover:text-primary transition-colors cursor-pointer"
-                    >
-                      <ChevronRight className="w-5 h-5" />
+                      <img 
+                        src={birthdayIcon} 
+                        className="w-7 h-7 theme-icon-green object-contain" 
+                        alt="Aniversariantes" 
+                      />
                     </button>
                   )}
                 </div>
-                <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase">
-                  {format(viewMode === 'YEAR' ? selectedMonthInYearView! : currentDate, 'yyyy')}
-                </span>
               </div>
             )}
 

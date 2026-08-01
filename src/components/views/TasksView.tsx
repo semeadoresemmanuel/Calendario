@@ -65,15 +65,15 @@ export const TasksView: React.FC<TasksViewProps> = ({
             <button 
               onClick={() => onOpenAddModal(activeTaskDate, undefined, 'task', 'checklist')} 
               className={cn(
-                "flex items-center h-[30px] rounded-full transition-all duration-200 hover:scale-105 cursor-pointer font-black text-[10px] sm:text-[11px] uppercase tracking-wider border border-border/40 shadow-inner px-4 gap-2",
+                "flex items-center h-[30px] rounded-full transition-all duration-200 hover:scale-105 cursor-pointer font-black text-[10px] sm:text-[11px] uppercase tracking-wider border border-border/40 shadow-inner pl-0 pr-4",
                 darkMode ? "bg-[#262626] text-primary" : "bg-[#E2E2E2] text-primary"
               )}
             >
-              <div className="flex items-center justify-center h-full gap-2">
-                <span className="text-sm font-bold">+</span>
-                <span className="w-[1px] h-3.5 bg-primary/30" />
+              <div className="w-[32px] h-full flex items-center justify-center shrink-0">
+                <span className="text-sm font-bold pt-[1px] translate-x-[1.5px]">+</span>
               </div>
-              <span className="pt-[1px]">ADICIONAR TAREFA</span>
+              <span className="w-[1px] h-3.5 bg-primary/30 shrink-0" />
+              <span className="pl-3 pt-[1px]">ADICIONAR TAREFA</span>
             </button>
 
             <button 

@@ -41,7 +41,7 @@ export const MonthDayView: React.FC<MonthDayViewProps> = ({
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-8 flex flex-col">
+    <div className={cn("w-full mx-auto flex flex-col space-y-0", (isAdmin && viewMode !== 'DAY') ? "md:space-y-8" : "")}>
       {displayDates.map((date) => {
         const dayItems = items
           .filter(i => isSameDay(i.date, date) && i.type !== 'task')
@@ -50,16 +50,26 @@ export const MonthDayView: React.FC<MonthDayViewProps> = ({
             const timeB = b.startTime || '00:00';
             return timeA.localeCompare(timeB);
           });
-        const dateColor = 'var(--primary)';
+          
+        const isFeriado = dayItems.some(i => i.modalidade?.toLowerCase().includes('feriado') || i.title.toLowerCase().includes('feriado'));
+        const isPontoFacultativo = dayItems.some(i => i.modalidade?.toLowerCase().includes('facultativo') || i.title.toLowerCase().includes('facultativo'));
+
+        let dateColor = 'var(--primary)';
+        if (isFeriado) dateColor = 'var(--destructive)';
+        else if (isPontoFacultativo) dateColor = 'var(--warning)';
 
         return (
           <div key={date.toISOString()} className={cn(
-            "flex flex-col gap-6",
-            viewMode === 'DAY' ? "items-center text-center w-full" : "md:flex-row items-start"
+            "w-full",
+            (viewMode === 'DAY' || !isAdmin)
+              ? "flex flex-col items-center" 
+              : "md:grid md:grid-cols-[1fr_minmax(0,36rem)_1fr] md:gap-4 md:items-start relative"
           )}>
             <div className={cn(
-              "flex md:flex-col items-center gap-4 md:gap-1 shrink-0 mt-1",
-              viewMode === 'DAY' ? "justify-center" : "md:items-start md:w-28"
+              "flex flex-col items-center justify-start shrink-0 py-6",
+              (viewMode === 'DAY' || !isAdmin)
+                ? "" 
+                : "gap-1 md:py-0 md:pt-[22px] lg:pr-4"
             )}>
               <div className="flex items-baseline">
                 {viewMode === 'DAY' ? (
@@ -134,7 +144,7 @@ export const MonthDayView: React.FC<MonthDayViewProps> = ({
               )}
             </div>
 
-            <div className="flex-1 w-full space-y-3">
+            <div className="w-full max-w-xl mx-auto space-y-3">
               {(() => {
                 if (dayItems.length === 0) {
                   return (
@@ -268,6 +278,9 @@ export const MonthDayView: React.FC<MonthDayViewProps> = ({
                 );
               })()}
             </div>
+            
+            {/* Right Empty Space for Grid Balance */}
+            {(viewMode !== 'DAY' && isAdmin) && <div className="hidden md:block" />}
           </div>
         );
       })}

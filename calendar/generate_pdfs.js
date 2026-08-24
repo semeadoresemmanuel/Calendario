@@ -57,7 +57,6 @@ try {
   console.log('Generating Light PDF...');
   const lightUrl = pathToFileURL(lightTempPath).href;
   execSync(`"${chromePath}" --headless --disable-gpu --no-pdf-header-footer --print-to-pdf="${pdfLightPath}" "${lightUrl}"`);
-  fs.copyFileSync(pdfLightPath, path.join(publicDir, 'Calendário 2026 (Light Mode).pdf'));
   fs.copyFileSync(pdfLightPath, path.join(publicDir, 'calendario_2026_light.pdf'));
   console.log('Light PDF generated and copied to public/ successfully.');
 
@@ -65,7 +64,6 @@ try {
   console.log('Generating Dark PDF...');
   const darkUrl = pathToFileURL(darkTempPath).href;
   execSync(`"${chromePath}" --headless --disable-gpu --no-pdf-header-footer --print-to-pdf="${pdfDarkPath}" "${darkUrl}"`);
-  fs.copyFileSync(pdfDarkPath, path.join(publicDir, 'Calendário 2026 (Dark Mode).pdf'));
   fs.copyFileSync(pdfDarkPath, path.join(publicDir, 'calendario_2026_dark.pdf'));
   console.log('Dark PDF generated and copied to public/ successfully.');
 } catch (err) {

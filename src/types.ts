@@ -10,7 +10,6 @@ export interface CalendarItem {
   endTime?: string;
   description?: string;
   modalidade?: string;
-  completed?: boolean;
   order?: number;
   cover?: string;
 }

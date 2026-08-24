@@ -32,7 +32,7 @@ import { FutureTasksModal } from './components/modals/FutureTasksModal';
 import { YearView } from './components/views/YearView';
 import { MonthDayView } from './components/views/MonthDayView';
 import { TasksView } from './components/views/TasksView';
-import birthdayIcon from './elements/birthday_cake.svg';
+import birthdayIcon from './assets/icons/birthday_cake.svg';
 import { MEMBER_BIRTHDAYS } from './constants/birthdays';
 
 export default function App() {
@@ -88,8 +88,6 @@ export default function App() {
   // Form State
   const [editingItem, setEditingItem] = useState<CalendarItem | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [selectedModalidade, setSelectedModalidade] = useState<string>('');
   const [formTitle, setFormTitle] = useState<string>('');
   const [formType, setFormType] = useState<ItemType>('event');
@@ -124,7 +122,6 @@ export default function App() {
               endTime: data.endTime || '',
               description: data.description || '',
               modalidade: data.modalidade || '',
-              completed: data.completed || false,
               order: data.order ?? 0,
               cover: data.cover
             });
@@ -201,10 +198,8 @@ export default function App() {
 
   // Form Modal Handler
   const openAddModal = useCallback((date: Date = new Date(), item?: CalendarItem, type: ItemType = 'event', category?: 'checklist' | 'responsavel' | 'orientacao') => {
-    const initialDate = item ? item.date : (type === 'task' ? date : date);
+    const initialDate = item ? item.date : date;
     setSelectedDate(initialDate);
-    setSelectedDay(initialDate ? initialDate.getDate() : null);
-    setSelectedMonth(initialDate ? initialDate.getMonth() : null);
     setSelectedModalidade(item?.modalidade || '');
     setFormTitle(item?.title || '');
     setFormType(type);
@@ -241,7 +236,6 @@ export default function App() {
       description: (formData.get('description') as string) || "",
       modalidade: formData.get('modalidade') as string,
       cover: formCover || undefined,
-      completed: editingItem ? editingItem.completed : false,
       order: editingItem?.order ?? Date.now()
     };
 
@@ -277,20 +271,34 @@ export default function App() {
 
   const handleReorder = useCallback((newOrder: CalendarItem[]) => {
     setItems(prev => {
-      const updatedNewOrder = newOrder.map((item, index) => ({
-        ...item,
-        order: index
-      }));
-      const next = [...prev];
-      const indices = updatedNewOrder.map(item => prev.findIndex(i => i.id === item.id)).sort((a, b) => a - b);
-      indices.forEach((globalIndex, i) => {
-        if (globalIndex !== -1) {
-          next[globalIndex] = updatedNewOrder[i];
-          const updatedItem = updatedNewOrder[i];
-          setDoc(doc(db, 'items', updatedItem.id), { ...updatedItem, date: updatedItem.date.toISOString() });
-        }
+      const orderMap = new Map<string, number>();
+      newOrder.forEach((item, index) => {
+        orderMap.set(item.id, index);
       });
-      return next;
+
+      return prev.map(item => {
+        if (orderMap.has(item.id)) {
+          return { ...item, order: orderMap.get(item.id)! };
+        }
+        return item;
+      });
+    });
+
+    // Asynchronously persist updated order in background
+    newOrder.forEach(async (item, index) => {
+      try {
+        const itemToSave = {
+          ...item,
+          order: index,
+          date: item.date instanceof Date ? item.date.toISOString() : item.date
+        };
+        const cleanData = Object.fromEntries(
+          Object.entries(itemToSave).filter(([_, v]) => v !== undefined)
+        );
+        await setDoc(doc(db, 'items', item.id), cleanData);
+      } catch (err) {
+        console.error('Error saving reordered item:', err);
+      }
     });
   }, []);
 
@@ -519,10 +527,6 @@ export default function App() {
           editingItem={editingItem}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
-          selectedDay={selectedDay}
-          setSelectedDay={setSelectedDay}
-          selectedMonth={selectedMonth}
-          setSelectedMonth={setSelectedMonth}
           formTitle={formTitle}
           setFormTitle={setFormTitle}
           formType={formType}

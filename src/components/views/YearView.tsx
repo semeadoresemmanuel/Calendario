@@ -3,7 +3,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isMonday, isAfter,
 import { ptBR } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 import { getModalidadeColor } from '../../utils/helpers';
-import pdfDownloadIcon from '../../elements/pdf_download.svg';
+import pdfDownloadIcon from '../../assets/icons/pdf_download.svg';
 import { CalendarItem } from '../../types';
 
 interface YearViewProps {
@@ -19,9 +19,22 @@ export const YearView: React.FC<YearViewProps> = ({
   darkMode,
   onSelectMonth,
 }) => {
+  const currentYear = yearMonths[0] ? format(yearMonths[0], 'yyyy') : '2026';
+
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5">
+      <div className="flex items-center justify-center w-full mb-6">
+        <div className={cn(
+          "px-6 h-[30px] rounded-full border border-border/40 shadow-inner flex items-center justify-center",
+          darkMode ? "bg-[#262626]" : "bg-[#E2E2E2]"
+        )}>
+          <span className="text-xs sm:text-sm font-display font-bold text-primary tracking-widest uppercase">
+            {currentYear}
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5 w-full">
         {yearMonths.map((month, index) => {
           const itemsInMonth = items.filter(i => 
             i.date.getMonth() === month.getMonth() && 
@@ -40,7 +53,7 @@ export const YearView: React.FC<YearViewProps> = ({
               key={month.toISOString()}
               onClick={() => onSelectMonth(month)}
               className={cn(
-                "p-6 lg:p-5 rounded-3xl border transition-all text-left group relative overflow-hidden cursor-pointer",
+                "p-6 lg:p-5 rounded-3xl border transition-all group relative overflow-hidden cursor-pointer flex flex-col justify-start",
                 darkMode ? "bg-[#262626]" : "bg-[#E2E2E2]",
                 "border-border hover:border-primary/50 hover:shadow-md",
                 yearMonths.length % 3 === 1 && index === yearMonths.length - 1 && "lg:col-start-2"
@@ -49,20 +62,13 @@ export const YearView: React.FC<YearViewProps> = ({
               {isCurrentMonth && (
                 <div className="absolute inset-0 bg-primary/25 pointer-events-none" />
               )}
-              <div className="flex justify-between items-center mb-4 lg:mb-3 pr-20">
-                <h3 className="text-xl font-display font-bold uppercase tracking-tight text-foreground group-hover:text-primary transition-colors">
+              <div className="flex justify-center items-center mb-4 lg:mb-3 w-full">
+                <h3 className="text-xl font-display font-bold uppercase tracking-tight text-foreground group-hover:text-primary transition-colors text-center">
                   {format(month, 'MMMM', { locale: ptBR })}
                 </h3>
               </div>
-
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center gap-3 min-w-[80px]">
-                <div className="w-[1px] h-12 bg-primary" />
-                <span className="text-lg font-display font-bold text-primary">
-                 {format(month, 'yyyy')}
-                </span>
-              </div>
               
-              <div className="space-y-1.5 pr-20">
+              <div className="space-y-1.5 w-full">
                 {itemsInMonth.length > 0 ? (
                   itemsInMonth.slice(0, 3).map(item => (
                     <div key={item.id} className="flex items-center gap-2 text-xs text-muted-foreground truncate">
@@ -77,7 +83,7 @@ export const YearView: React.FC<YearViewProps> = ({
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-primary italic">Sem encontros</p>
+                  <p className="text-sm text-primary italic text-center py-2">Férias</p>
                 )}
                 {itemsInMonth.length > 3 && (
                   <p className="text-[10px] text-primary font-bold mt-1">+ {itemsInMonth.length - 3} itens</p>

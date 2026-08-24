@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
-import adminPadlock from '../../elements/admin_padlock.svg';
-import adminPadlockUnlock from '../../elements/admin_padlock_unlock.svg';
+import adminPadlock from '../../assets/icons/admin_padlock.svg';
+import adminPadlockUnlock from '../../assets/icons/admin_padlock_unlock.svg';
 
 export const AdminIcon = ({ className, unlocked }: { className?: string; unlocked?: boolean }) => {
   return (

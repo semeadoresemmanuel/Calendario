@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Moon, Sun } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { AdminIcon } from '../ui/AdminIcon';
-import taskMode from '../../elements/task_mode.svg';
-import timelineMode from '../../elements/timeline_mode.svg';
+import taskMode from '../../assets/icons/task_mode.svg';
+import timelineMode from '../../assets/icons/timeline_mode.svg';
 
 interface HeaderProps {
   activeTab: 'cronograma' | 'tarefas';

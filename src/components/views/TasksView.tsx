@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, Reorder } from 'motion/react';
 import { Clock, Pencil, Trash } from 'lucide-react';
 import { startOfWeek, isSameDay } from 'date-fns';
 import { cn } from '../../lib/utils';
 import { formatDescription } from '../../utils/formatters';
-import eyeIcon from '../../elements/eye.svg';
+import eyeIcon from '../../assets/icons/eye.svg';
 import { CalendarItem } from '../../types';
 
 interface TasksViewProps {
@@ -16,12 +16,6 @@ interface TasksViewProps {
   onConfirmDeleteItem: (id: string) => void;
   onReorder: (newOrder: CalendarItem[]) => void;
 }
-
-const DEPARTMENT_ORDER: Record<string, number> = {
-  'Música': 1,
-  'Recepção': 2,
-  'Som': 3,
-};
 
 export const TasksView: React.FC<TasksViewProps> = ({
   items,
@@ -36,21 +30,42 @@ export const TasksView: React.FC<TasksViewProps> = ({
   const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
   const activeTaskDate = currentWeekStart;
 
-  const weekItems = items.filter(i => 
-    i.type === 'task' && 
-    isSameDay(startOfWeek(i.date, { weekStartsOn: 1 }), activeTaskDate)
-  );
+  const weekItems = useMemo(() => {
+    return items.filter(i => 
+      i.type === 'task' && 
+      isSameDay(startOfWeek(i.date, { weekStartsOn: 1 }), activeTaskDate)
+    );
+  }, [items, activeTaskDate]);
 
-  const checklist = weekItems
-    .filter(i => i.category === 'checklist')
-    .sort((a, b) => {
-      const orderA = DEPARTMENT_ORDER[a.modalidade || ''] ?? 99;
-      const orderB = DEPARTMENT_ORDER[b.modalidade || ''] ?? 99;
-      if (orderA !== orderB) {
-        return orderA - orderB;
-      }
-      return (a.order ?? 0) - (b.order ?? 0);
-    });
+  const sortedChecklist = useMemo(() => {
+    return weekItems
+      .filter(i => i.category === 'checklist')
+      .sort((a, b) => {
+        const comp = (a.modalidade || '').localeCompare(b.modalidade || '', 'pt-BR');
+        if (comp !== 0) {
+          return comp;
+        }
+        return (a.order ?? 0) - (b.order ?? 0);
+      });
+  }, [weekItems]);
+
+  const [localList, setLocalList] = useState<CalendarItem[]>(sortedChecklist);
+  const isDraggingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setLocalList(sortedChecklist);
+    }
+  }, [sortedChecklist]);
+
+  const handleReorderList = (newOrder: CalendarItem[]) => {
+    setLocalList(newOrder);
+  };
+
+  const handleDragEnd = () => {
+    isDraggingRef.current = false;
+    onReorder(localList);
+  };
 
   return (
     <motion.div 
@@ -89,13 +104,15 @@ export const TasksView: React.FC<TasksViewProps> = ({
           </div>
         )}
         
-        {checklist.length > 0 ? (
+        {localList.length > 0 ? (
           isAdmin ? (
-            <Reorder.Group axis="y" values={checklist} onReorder={onReorder} className="space-y-3 flex-1 flex flex-col">
-              {checklist.map((item) => (
+            <Reorder.Group axis="y" values={localList} onReorder={handleReorderList} className="space-y-3 flex-1 flex flex-col">
+              {localList.map((item) => (
                 <Reorder.Item 
                   key={item.id} 
                   value={item}
+                  onDragStart={() => { isDraggingRef.current = true; }}
+                  onDragEnd={handleDragEnd}
                   className={cn(
                     "flex items-start justify-between group gap-4 border border-border rounded-3xl p-6 transition-colors select-none shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing touch-none",
                     darkMode ? "bg-[#262626]" : "bg-[#E2E2E2]"
@@ -164,7 +181,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
             </Reorder.Group>
           ) : (
             <div className="space-y-3 flex-1 flex flex-col">
-              {checklist.map((item) => (
+              {localList.map((item) => (
                 <div 
                   key={item.id}
                   className={cn(

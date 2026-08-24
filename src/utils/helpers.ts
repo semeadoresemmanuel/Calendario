@@ -13,9 +13,6 @@ export const generateUUID = (): string => {
   });
 };
 
-import { MEMBER_BIRTHDAYS } from '../constants/birthdays';
-export { MEMBER_BIRTHDAYS };
-
 export const generateNotificationBanner = (title: string, subtitle: string): string => {
   if (typeof document === 'undefined') return '';
   const canvas = document.createElement('canvas');
@@ -206,15 +203,16 @@ export const getModalidadeColor = (modalidade?: string): string => {
     case 'Abertura':
     case 'Encerramento':
     case 'Especial':
+    case 'Obra Básica - O Livro dos Espíritos':
     case 'O Livro dos Espíritos':
     case 'Prática':
     case 'Reforma Intima':
     case 'Reforma Íntima':
       return 'var(--primary)';
     case 'Ponto Facultativo':
-      return '#FF8C00ff';
+      return 'var(--warning)';
     case 'Feriado':
-      return '#FF0000ff';
+      return 'var(--destructive)';
     default:
       return 'var(--primary)';
   }

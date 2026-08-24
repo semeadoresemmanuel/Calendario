@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronLeft } from 'lucide-react';
-import adminPadlock from '../../elements/admin_padlock.svg';
-import eyeIcon from '../../elements/eye.svg';
-import closedEyeIcon from '../../elements/closed_eye.svg';
+import adminPadlock from '../../assets/icons/admin_padlock.svg';
+import eyeIcon from '../../assets/icons/eye.svg';
+import closedEyeIcon from '../../assets/icons/closed_eye.svg';
 
 interface AuthModalProps {
   isOpen: boolean;

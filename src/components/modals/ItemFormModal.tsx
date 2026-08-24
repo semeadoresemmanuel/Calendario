@@ -13,6 +13,7 @@ import {
   ALL_EVENT_MODALIDADES,
   NO_CHAMADA_MODALIDADES 
 } from '../../constants/modalidades';
+import { TEAM_MEMBERS } from '../../constants/members';
 
 interface ItemFormModalProps {
   isOpen: boolean;
@@ -20,10 +21,6 @@ interface ItemFormModalProps {
   editingItem: CalendarItem | null;
   selectedDate: Date | null;
   setSelectedDate: (date: Date) => void;
-  selectedDay: number | null;
-  setSelectedDay: (day: number | null) => void;
-  selectedMonth: number | null;
-  setSelectedMonth: (month: number | null) => void;
   formTitle: string;
   setFormTitle: (title: string) => void;
   formType: ItemType;
@@ -52,10 +49,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   editingItem,
   selectedDate,
   setSelectedDate,
-  selectedDay,
-  setSelectedDay,
-  selectedMonth,
-  setSelectedMonth,
   formTitle,
   setFormTitle,
   formType,
@@ -80,6 +73,10 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   const [isModalidadeSelectOpen, setIsModalidadeSelectOpen] = useState(false);
   const [isMemberSelectOpen, setIsMemberSelectOpen] = useState(false);
 
+  // Local state for Day/Month task picker dialog
+  const [tempDay, setTempDay] = useState<number | null>(selectedDate ? selectedDate.getDate() : null);
+  const [tempMonth, setTempMonth] = useState<number | null>(selectedDate ? selectedDate.getMonth() : null);
+
   if (!isOpen) return null;
 
   const isTaskForm = formType === 'task' && (formCategory === 'checklist' || formCategory === 'orientacao' || formCategory === 'responsavel');
@@ -96,6 +93,79 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
         ? RECESSO_MODALIDADES 
         : (formContext === 'encontro' ? ENCONTRO_MODALIDADES : ALL_EVENT_MODALIDADES)
       );
+
+  // Process image with client-side canvas compression
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_DIM = 1600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height *= MAX_DIM / width;
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width *= MAX_DIM / height;
+            height = MAX_DIM;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let curCanvas = document.createElement('canvas');
+        curCanvas.width = img.width;
+        curCanvas.height = img.height;
+        const curCtx = curCanvas.getContext('2d');
+        if (curCtx) {
+          curCtx.drawImage(img, 0, 0);
+          let curWidth = img.width;
+          let curHeight = img.height;
+
+          while (curWidth * 0.5 > width) {
+            const stepCanvas = document.createElement('canvas');
+            stepCanvas.width = Math.round(curWidth * 0.5);
+            stepCanvas.height = Math.round(curHeight * 0.5);
+            const stepCtx = stepCanvas.getContext('2d');
+            if (stepCtx) {
+              stepCtx.imageSmoothingEnabled = true;
+              stepCtx.imageSmoothingQuality = 'high';
+              stepCtx.drawImage(curCanvas, 0, 0, stepCanvas.width, stepCanvas.height);
+            }
+            curCanvas = stepCanvas;
+            curWidth = curCanvas.width;
+            curHeight = curCanvas.height;
+          }
+
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(curCanvas, 0, 0, width, height);
+        } else {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+        }
+
+        setFormCover(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const isRecessoOrNoChamada = formContext === 'recesso' || NO_CHAMADA_MODALIDADES.includes(selectedModalidade as any);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
@@ -163,11 +233,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                               key={opt}
                               type="button"
                               onClick={() => {
-                                if (selectedModalidade === opt) {
-                                  setSelectedModalidade('');
-                                } else {
-                                  setSelectedModalidade(opt);
-                                }
+                                setSelectedModalidade(selectedModalidade === opt ? '' : opt);
                                 setIsModalidadeSelectOpen(false);
                               }}
                               className={cn(
@@ -187,10 +253,10 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 </AnimatePresence>
               </div>
 
-              {/* 2. Tarefa / Assunto */}
+              {/* 2. Tarefa(s) / Assunto */}
               <div className="space-y-1 w-full">
                 <label className="block text-center text-sm font-medium text-foreground">
-                  {formCategory === 'checklist' ? 'Tarefa' : 'Assunto'}
+                  {formCategory === 'checklist' ? 'Tarefa(s)' : 'Assunto'}
                 </label>
                 <input 
                   name="title" 
@@ -230,21 +296,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                           className="w-[90%] max-w-[360px] bg-card border border-border rounded-[2rem] shadow-2xl p-6 flex flex-col items-center gap-6 pointer-events-auto"
                         >
                           <div className="w-full flex flex-col gap-0.5 pr-1 max-h-64 overflow-y-auto no-scrollbar">
-                            {[
-                              'Alexandre',
-                              'Amanda',
-                              'Carla',
-                              'Carlos Henrique',
-                              'Eder',
-                              'Gilberto',
-                              'Jean',
-                              'Laura',
-                              'Maria de Lourdes',
-                              'Ruth',
-                              'Thainá',
-                              'Wallace',
-                              'Todos os Membros'
-                            ].map(opt => {
+                            {TEAM_MEMBERS.map(opt => {
                               const isSelected = selectedMember.split(', ').filter(Boolean).includes(opt);
                               const isTodosOption = opt === 'Todos os Membros';
                               return (
@@ -253,20 +305,14 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                                   type="button"
                                   onClick={() => {
                                     const currentMembers = selectedMember ? selectedMember.split(', ').filter(Boolean) : [];
-                                    let nextMembers;
+                                    let nextMembers: string[];
                                     if (opt === 'Todos os Membros') {
-                                      if (currentMembers.includes('Todos os Membros')) {
-                                        nextMembers = [];
-                                      } else {
-                                        nextMembers = ['Todos os Membros'];
-                                      }
+                                      nextMembers = currentMembers.includes('Todos os Membros') ? [] : ['Todos os Membros'];
                                     } else {
                                       const activeIndividual = currentMembers.filter(m => m !== 'Todos os Membros');
-                                      if (activeIndividual.includes(opt)) {
-                                        nextMembers = activeIndividual.filter(m => m !== opt);
-                                      } else {
-                                        nextMembers = [...activeIndividual, opt];
-                                      }
+                                      nextMembers = activeIndividual.includes(opt) 
+                                        ? activeIndividual.filter(m => m !== opt) 
+                                        : [...activeIndividual, opt];
                                     }
                                     nextMembers.sort();
                                     setSelectedMember(nextMembers.join(', '));
@@ -312,7 +358,11 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                   <label className="block text-center text-sm font-medium text-foreground">Data</label>
                   <button
                     type="button"
-                    onClick={() => setIsDaySelectOpen(!isDaySelectOpen)}
+                    onClick={() => {
+                      setTempDay(selectedDate ? selectedDate.getDate() : null);
+                      setTempMonth(selectedDate ? selectedDate.getMonth() : null);
+                      setIsDaySelectOpen(!isDaySelectOpen);
+                    }}
                     className={cn(
                       "w-full p-2.5 flex items-center justify-center rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer",
                       isDaySelectOpen && "border-primary ring-1 ring-primary/20",
@@ -340,21 +390,15 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                               <span className="text-sm font-bold text-primary mb-1 uppercase tracking-wider select-none">DIA</span>
                               <div className="w-full overflow-y-auto no-scrollbar flex flex-col gap-1 h-56">
                                 {Array.from({ length: 31 }, (_, i) => i + 1).map(d => {
-                                  const maxDaysInSelectedMonth = selectedMonth !== null ? new Date(new Date().getFullYear(), selectedMonth + 1, 0).getDate() : 31;
+                                  const maxDaysInSelectedMonth = tempMonth !== null ? new Date(new Date().getFullYear(), tempMonth + 1, 0).getDate() : 31;
                                   const isDisabled = d > maxDaysInSelectedMonth;
-                                  const isSelected = selectedDay === d;
+                                  const isSelected = tempDay === d;
                                   return (
                                     <button
                                       key={d}
                                       type="button"
                                       disabled={isDisabled}
-                                      onClick={() => {
-                                        if (selectedDay === d) {
-                                          setSelectedDay(null);
-                                        } else {
-                                          setSelectedDay(d);
-                                        }
-                                      }}
+                                      onClick={() => setTempDay(tempDay === d ? null : d)}
                                       className={cn(
                                         "py-2 text-sm rounded-xl transition-colors text-center font-bold shrink-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed",
                                         isSelected 
@@ -386,47 +430,38 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                                   { value: 9, label: 'Outubro' },
                                   { value: 10, label: 'Novembro' },
                                   { value: 11, label: 'Dezembro' }
-                                ].map(m => {
-                                  const isSelected = selectedMonth === m.value;
-                                  return (
-                                    <button
-                                      key={m.value}
-                                      type="button"
-                                      onClick={() => {
-                                        if (selectedMonth === m.value) {
-                                          setSelectedMonth(null);
-                                        } else {
-                                          setSelectedMonth(m.value);
-                                        }
-                                      }}
-                                      className={cn(
-                                        "py-2 text-sm rounded-xl transition-colors text-center font-bold shrink-0 cursor-pointer",
-                                        isSelected 
-                                          ? "bg-primary text-primary-foreground" 
-                                          : "hover:bg-primary/10 text-foreground"
-                                      )}
-                                    >
-                                      {m.label}
-                                    </button>
-                                  );
-                                })}
+                                ].map(m => (
+                                  <button
+                                    key={m.value}
+                                    type="button"
+                                    onClick={() => setTempMonth(tempMonth === m.value ? null : m.value)}
+                                    className={cn(
+                                      "py-2 text-sm rounded-xl transition-colors text-center font-bold shrink-0 cursor-pointer",
+                                      tempMonth === m.value 
+                                        ? "bg-primary text-primary-foreground" 
+                                        : "hover:bg-primary/10 text-foreground"
+                                    )}
+                                  >
+                                    {m.label}
+                                  </button>
+                                ))}
                               </div>
                             </div>
                           </div>
 
                           <button
                             type="button"
-                            disabled={selectedDay === null || selectedMonth === null}
+                            disabled={tempDay === null || tempMonth === null}
                             onClick={() => {
-                              if (selectedDay !== null && selectedMonth !== null) {
+                              if (tempDay !== null && tempMonth !== null) {
                                 const year = selectedDate ? selectedDate.getFullYear() : new Date().getFullYear();
-                                setSelectedDate(new Date(year, selectedMonth, selectedDay));
+                                setSelectedDate(new Date(year, tempMonth, tempDay));
                                 setIsDaySelectOpen(false);
                               }
                             }}
                             className={cn(
                               "w-[170px] py-2.5 rounded-xl font-bold transition-all uppercase text-xs tracking-wider mt-2",
-                              (selectedDay !== null && selectedMonth !== null) 
+                              (tempDay !== null && tempMonth !== null) 
                                 ? "bg-primary text-primary-foreground hover:opacity-90 cursor-pointer" 
                                 : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
                             )}
@@ -454,417 +489,324 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               </div>
             </div>
           ) : (
-            // Original form fields for Event/Recesso
+            // Event / Recesso form fields
             <>
-              <div className={cn("grid gap-4", (formCategory !== 'orientacao' && formCategory !== 'responsavel' && formType === 'task') ? "grid-cols-[145px_1fr]" : "grid-cols-1")}>
-                {formCategory !== 'orientacao' && formCategory !== 'responsavel' && formType === 'task' && (
-                  <div className="space-y-1 relative">
-                    <label className="block text-center text-sm font-medium text-foreground">Data</label>
-                    <div className="flex gap-1.5">
-                      {/* Day Selector */}
-                      <div className="relative flex-[1]">
-                        <button
-                          type="button"
-                          disabled={viewMode === 'DAY' && formType !== 'task'}
-                          onClick={() => {
-                            setIsDaySelectOpen(!isDaySelectOpen);
-                            setIsMonthSelectOpen(false);
-                          }}
-                          className={cn(
-                            "w-full p-2 flex items-center justify-between rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm h-[42px]",
-                            isDaySelectOpen && "border-primary ring-1 ring-primary/20"
-                          )}
-                        >
-                          <span className="flex-1 text-center font-bold">
-                            {selectedDate ? selectedDate.getDate().toString().padStart(2, '0') : '01'}
-                          </span>
-                          <ChevronDown className={cn("w-3.5 h-3.5 text-foreground/50 transition-transform", isDaySelectOpen && "rotate-180")} />
-                        </button>
+              {/* Data: Monday selector / Month selector */}
+              <div className="space-y-1 relative">
+                <div className="flex gap-1.5">
+                  {/* Day Selector */}
+                  <div className="relative flex-[1]">
+                    <button
+                      type="button"
+                      disabled={viewMode === 'DAY'}
+                      onClick={() => {
+                        setIsDaySelectOpen(!isDaySelectOpen);
+                        setIsMonthSelectOpen(false);
+                      }}
+                      className={cn(
+                        "w-full p-2 flex items-center justify-between rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm h-[42px]",
+                        isDaySelectOpen && "border-primary ring-1 ring-primary/20"
+                      )}
+                    >
+                      <span className="flex-1 text-center font-bold">
+                        {selectedDate ? selectedDate.getDate().toString().padStart(2, '0') : '01'}
+                      </span>
+                      <ChevronDown className={cn("w-3.5 h-3.5 text-foreground/50 transition-transform", isDaySelectOpen && "rotate-180")} />
+                    </button>
 
-                        <AnimatePresence>
-                          {isDaySelectOpen && (!['DAY'].includes(viewMode) || formType === 'task') && (
-                            <>
-                              <div className="fixed inset-0 z-30" onClick={() => setIsDaySelectOpen(false)} />
-                              <motion.div
-                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="absolute left-0 right-0 z-40 mt-2 bg-card border border-border rounded-2xl shadow-xl max-h-48 overflow-y-auto min-w-[55px]"
-                              >
-                                <div className="p-1 flex flex-col gap-1">
-                                  {(() => {
-                                    if (!selectedDate) return null;
-                                    const mondays = eachDayOfInterval({
-                                      start: startOfMonth(selectedDate),
-                                      end: endOfMonth(selectedDate)
-                                    }).filter(d => isMonday(d));
-                                    
-                                    return mondays.map(date => {
-                                      const d = date.getDate();
-                                      return (
-                                        <button
-                                          key={d}
-                                          type="button"
-                                          onClick={() => {
-                                            setSelectedDate(date);
-                                            setIsDaySelectOpen(false);
-                                          }}
-                                          className={cn(
-                                            "p-1.5 text-xs rounded-lg transition-colors text-center font-medium cursor-pointer",
-                                            selectedDate?.getDate() === d 
-                                              ? "bg-primary text-primary-foreground font-bold" 
-                                              : "hover:bg-primary/10 text-foreground"
-                                          )}
-                                        >
-                                          {d.toString().padStart(2, '0')}
-                                        </button>
-                                      );
-                                    });
-                                  })()}
-                                </div>
-                              </motion.div>
-                            </>
-                          )}
-                        </AnimatePresence>
-                      </div>
-
-                      {/* Month Selector */}
-                      <div className="relative flex-[1.3]">
-                        <button
-                          type="button"
-                          disabled={viewMode === 'DAY' && formType !== 'task'}
-                          onClick={() => {
-                            setIsMonthSelectOpen(!isMonthSelectOpen);
-                            setIsDaySelectOpen(false);
-                          }}
-                          className={cn(
-                            "w-full p-2 flex items-center justify-between rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm h-[42px]",
-                            isMonthSelectOpen && "border-primary ring-1 ring-primary/20"
-                          )}
-                        >
-                          <span className="flex-1 text-center font-bold capitalize">
-                            {selectedDate ? format(selectedDate, 'MMM', { locale: ptBR }) : 'Jan'}
-                          </span>
-                          <ChevronDown className={cn("w-3.5 h-3.5 text-foreground/50 transition-transform", isMonthSelectOpen && "rotate-180")} />
-                        </button>
-
-                        <AnimatePresence>
-                          {isMonthSelectOpen && (!['DAY'].includes(viewMode) || formType === 'task') && (
-                            <>
-                              <div className="fixed inset-0 z-30" onClick={() => setIsMonthSelectOpen(false)} />
-                              <motion.div
-                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="absolute left-0 right-0 z-40 mt-2 bg-card border border-border rounded-2xl shadow-xl max-h-48 overflow-y-auto min-w-[70px]"
-                              >
-                                <div className="p-1 flex flex-col gap-1">
-                                  {[
-                                    { value: 0, label: 'Jan' },
-                                    { value: 1, label: 'Fev' },
-                                    { value: 2, label: 'Mar' },
-                                    { value: 3, label: 'Abr' },
-                                    { value: 4, label: 'Mai' },
-                                    { value: 5, label: 'Jun' },
-                                    { value: 6, label: 'Jul' },
-                                    { value: 7, label: 'Ago' },
-                                    { value: 8, label: 'Set' },
-                                    { value: 9, label: 'Out' },
-                                    { value: 10, label: 'Nov' },
-                                    { value: 11, label: 'Dez' }
-                                  ].map(m => (
-                                    <button
-                                      key={m.value}
-                                      type="button"
-                                      onClick={() => {
-                                        if (selectedDate) {
-                                          const currentMondays = eachDayOfInterval({
-                                            start: startOfMonth(selectedDate),
-                                            end: endOfMonth(selectedDate)
-                                          }).filter(d => isMonday(d));
-                                          const currentMondayIdx = currentMondays.findIndex(d => format(d, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'));
-                                          
-                                          const newMonthStart = new Date(selectedDate.getFullYear(), m.value, 1);
-                                          const newMondays = eachDayOfInterval({
-                                            start: startOfMonth(newMonthStart),
-                                            end: endOfMonth(newMonthStart)
-                                          }).filter(d => isMonday(d));
-                                          
-                                          const targetIdx = currentMondayIdx !== -1 ? currentMondayIdx : 0;
-                                          const nextDate = newMondays[targetIdx] || newMondays[newMondays.length - 1] || newMonthStart;
-                                          setSelectedDate(nextDate);
-                                        }
-                                        setIsMonthSelectOpen(false);
-                                      }}
-                                      className={cn(
-                                        "p-1.5 text-xs rounded-lg transition-colors text-center font-medium cursor-pointer",
-                                        selectedDate?.getMonth() === m.value 
-                                          ? "bg-primary text-primary-foreground font-bold" 
-                                          : "hover:bg-primary/10 text-foreground"
-                                      )}
-                                    >
-                                      {m.label}
-                                    </button>
-                                  ))}
-                                </div>
-                              </motion.div>
-                            </>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </div>
+                    <AnimatePresence>
+                      {isDaySelectOpen && (
+                        <>
+                          <div className="fixed inset-0 z-30" onClick={() => setIsDaySelectOpen(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className="absolute left-0 right-0 z-40 mt-2 bg-card border border-border rounded-2xl shadow-xl max-h-48 overflow-y-auto min-w-[55px]"
+                          >
+                            <div className="p-1 flex flex-col gap-1">
+                              {selectedDate && eachDayOfInterval({
+                                start: startOfMonth(selectedDate),
+                                end: endOfMonth(selectedDate)
+                              }).filter(d => isMonday(d)).map(date => {
+                                const d = date.getDate();
+                                return (
+                                  <button
+                                    key={d}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedDate(date);
+                                      setIsDaySelectOpen(false);
+                                    }}
+                                    className={cn(
+                                      "p-1.5 text-xs rounded-lg transition-colors text-center font-medium cursor-pointer",
+                                      selectedDate?.getDate() === d 
+                                        ? "bg-primary text-primary-foreground font-bold" 
+                                        : "hover:bg-primary/10 text-foreground"
+                                    )}
+                                  >
+                                    {d.toString().padStart(2, '0')}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
                   </div>
-                )}
 
-                <div className="space-y-1 relative">
-                  <label className="block text-center text-sm font-medium text-foreground">
-                    {formType === 'task' ? 'Departamento' : 'Modalidade'}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsModalidadeSelectOpen(!isModalidadeSelectOpen)}
-                    className={cn(
-                      "w-full p-2.5 flex items-center justify-between rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer",
-                      isModalidadeSelectOpen && "border-primary ring-1 ring-primary/20",
-                      !selectedModalidade && "text-muted-foreground/60 italic"
-                    )}
-                  >
-                    <span className={cn("flex-1 text-center", selectedModalidade ? "font-bold" : "font-normal italic")}>
-                      {selectedModalidade || 'Selecionar'}
-                    </span>
-                    <ChevronDown className={cn("w-4 h-4 text-foreground/50 transition-transform", isModalidadeSelectOpen && "rotate-180")} />
-                  </button>
+                  {/* Month Selector */}
+                  <div className="relative flex-[1.3]">
+                    <button
+                      type="button"
+                      disabled={viewMode === 'DAY'}
+                      onClick={() => {
+                        setIsMonthSelectOpen(!isMonthSelectOpen);
+                        setIsDaySelectOpen(false);
+                      }}
+                      className={cn(
+                        "w-full p-2 flex items-center justify-between rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm h-[42px]",
+                        isMonthSelectOpen && "border-primary ring-1 ring-primary/20"
+                      )}
+                    >
+                      <span className="flex-1 text-center font-bold capitalize">
+                        {selectedDate ? format(selectedDate, 'MMM', { locale: ptBR }) : 'Jan'}
+                      </span>
+                      <ChevronDown className={cn("w-3.5 h-3.5 text-foreground/50 transition-transform", isMonthSelectOpen && "rotate-180")} />
+                    </button>
 
-                  <input type="hidden" name="modalidade" value={selectedModalidade} />
-
-                  <AnimatePresence>
-                    {isModalidadeSelectOpen && (
-                      <>
-                        <div className="fixed inset-0 z-30" onClick={() => setIsModalidadeSelectOpen(false)} />
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          className="absolute left-0 right-0 z-40 mt-2 bg-card border border-border rounded-2xl shadow-xl overflow-hidden"
-                        >
-                          <div className="p-1 flex flex-col gap-1">
-                            {availableModalidades.map(opt => (
-                              <button
-                                key={opt}
-                                type="button"
-                                onClick={() => {
-                                  const prev = selectedModalidade;
-                                  if (opt === prev) {
-                                    setSelectedModalidade('');
-                                  } else {
-                                    setSelectedModalidade(opt);
-                                  }
-                                  setIsModalidadeSelectOpen(false);
-                                  
-                                  if (formType === 'event') {
-                                    if (opt === 'Prática') {
-                                      setFormTitle('Atividades no Centro');
-                                    } else if (prev === 'Prática' && formTitle === 'Atividades no Centro') {
-                                      setFormTitle('');
+                    <AnimatePresence>
+                      {isMonthSelectOpen && (
+                        <>
+                          <div className="fixed inset-0 z-30" onClick={() => setIsMonthSelectOpen(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className="absolute left-0 right-0 z-40 mt-2 bg-card border border-border rounded-2xl shadow-xl max-h-48 overflow-y-auto min-w-[70px]"
+                          >
+                            <div className="p-1 flex flex-col gap-1">
+                              {[
+                                { value: 0, label: 'Jan' },
+                                { value: 1, label: 'Fev' },
+                                { value: 2, label: 'Mar' },
+                                { value: 3, label: 'Abr' },
+                                { value: 4, label: 'Mai' },
+                                { value: 5, label: 'Jun' },
+                                { value: 6, label: 'Jul' },
+                                { value: 7, label: 'Ago' },
+                                { value: 8, label: 'Set' },
+                                { value: 9, label: 'Out' },
+                                { value: 10, label: 'Nov' },
+                                { value: 11, label: 'Dez' }
+                              ].map(m => (
+                                <button
+                                  key={m.value}
+                                  type="button"
+                                  onClick={() => {
+                                    if (selectedDate) {
+                                      const currentMondays = eachDayOfInterval({
+                                        start: startOfMonth(selectedDate),
+                                        end: endOfMonth(selectedDate)
+                                      }).filter(d => isMonday(d));
+                                      const currentMondayIdx = currentMondays.findIndex(d => format(d, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'));
+                                      
+                                      const newMonthStart = new Date(selectedDate.getFullYear(), m.value, 1);
+                                      const newMondays = eachDayOfInterval({
+                                        start: startOfMonth(newMonthStart),
+                                        end: endOfMonth(newMonthStart)
+                                      }).filter(d => isMonday(d));
+                                      
+                                      const targetIdx = currentMondayIdx !== -1 ? currentMondayIdx : 0;
+                                      const nextDate = newMondays[targetIdx] || newMondays[newMondays.length - 1] || newMonthStart;
+                                      setSelectedDate(nextDate);
                                     }
-                                    if (['Ponto Facultativo', 'Feriado'].includes(opt)) {
-                                      setFormCover(null);
-                                    }
-                                  }
-                                }}
-                                className={cn(
-                                  "px-4 py-2 text-sm text-center rounded-lg transition-colors font-medium cursor-pointer",
-                                  selectedModalidade === opt 
-                                    ? "bg-primary text-primary-foreground font-bold" 
-                                    : "hover:bg-primary/10 text-foreground"
-                                )}
-                              >
-                                {opt}
-                              </button>
-                            ))}
-                          </div>
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
+                                    setIsMonthSelectOpen(false);
+                                  }}
+                                  className={cn(
+                                    "p-1.5 text-xs rounded-lg transition-colors text-center font-medium cursor-pointer",
+                                    selectedDate?.getMonth() === m.value 
+                                      ? "bg-primary text-primary-foreground font-bold" 
+                                      : "hover:bg-primary/10 text-foreground"
+                                  )}
+                                >
+                                  {m.label}
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </div>
 
-              {formCategory === 'responsavel' && (
+              {/* Modalidade / Tipo Dropdown */}
+              <div className="space-y-1 relative">
+                <label className="block text-center text-sm font-medium text-foreground">
+                  {formContext === 'recesso' ? 'Tipo' : 'Modalidade'}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsModalidadeSelectOpen(!isModalidadeSelectOpen)}
+                  className={cn(
+                    "w-full p-2.5 flex items-center justify-between rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer",
+                    isModalidadeSelectOpen && "border-primary ring-1 ring-primary/20",
+                    !selectedModalidade && "text-muted-foreground/60 italic"
+                  )}
+                >
+                  <span className={cn("flex-1 text-center", selectedModalidade ? "font-bold" : "font-normal italic")}>
+                    {selectedModalidade || 'Selecionar'}
+                  </span>
+                  <ChevronDown className={cn("w-4 h-4 text-foreground/50 transition-transform", isModalidadeSelectOpen && "rotate-180")} />
+                </button>
+
+                <input type="hidden" name="modalidade" value={selectedModalidade} />
+
+                <AnimatePresence>
+                  {isModalidadeSelectOpen && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setIsModalidadeSelectOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute left-0 right-0 z-40 mt-2 bg-card border border-border rounded-2xl shadow-xl overflow-hidden"
+                      >
+                        <div className="p-1 flex flex-col gap-1">
+                          {availableModalidades.map(opt => (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                const prev = selectedModalidade;
+                                if (prev === opt) {
+                                  setSelectedModalidade('');
+                                } else {
+                                  setSelectedModalidade(opt);
+                                }
+                                setIsModalidadeSelectOpen(false);
+
+                                // Auto-fill standard practice title
+                                if (opt === 'Prática') {
+                                  setFormTitle('Atividades no Centro');
+                                } else if (prev === 'Prática' && formTitle === 'Atividades no Centro') {
+                                  setFormTitle('');
+                                }
+
+                                if (['Ponto Facultativo', 'Feriado'].includes(opt)) {
+                                  setFormCover(null);
+                                }
+                              }}
+                              className={cn(
+                                "px-4 py-2 text-sm text-center rounded-lg transition-colors font-medium cursor-pointer",
+                                selectedModalidade === opt 
+                                  ? "bg-primary text-primary-foreground font-bold" 
+                                  : "hover:bg-primary/10 text-foreground"
+                              )}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Título / Tema */}
+              <div className="space-y-1">
+                <label className="block text-center text-sm font-medium text-foreground">
+                  {(formContext === 'recesso' || ['Ponto Facultativo', 'Feriado'].includes(selectedModalidade)) ? 'Título' : 'Tema'}
+                </label>
+                <input 
+                  name="title" 
+                  value={formTitle} 
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  required
+                  className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" 
+                />
+              </div>
+
+              {/* Horário (Event only) */}
+              {formContext !== 'recesso' && !['Ponto Facultativo', 'Feriado'].includes(selectedModalidade) && (
                 <div className="space-y-1">
-                  <label className="block text-center text-sm font-medium text-foreground">Nome</label>
-                  <input 
-                    name="title" 
-                    value={formTitle} 
-                    onChange={(e) => setFormTitle(e.target.value)}
-                    required
-                    className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" 
+                  <label className="block text-center text-sm font-medium text-foreground">Horário</label>
+                  <TimeRangePickerDropdown 
+                    startTime={formStartTime}
+                    onChangeStartTime={setFormStartTime}
+                    endTime={formEndTime}
+                    onChangeEndTime={setFormEndTime}
                   />
+                  <input type="hidden" name="startTime" value={formStartTime} />
+                  <input type="hidden" name="endTime" value={formEndTime} />
                 </div>
               )}
 
-              {(formCategory !== 'orientacao' && formCategory !== 'responsavel') ? (
-                <>
-                  <div className="space-y-1">
-                    <label className="block text-center text-sm font-medium text-foreground">
-                      {formType === 'task' 
-                        ? (formCategory === 'checklist' ? 'Tarefa' : 'Assunto')
-                        : ((formContext === 'recesso' || ['Ponto Facultativo', 'Feriado'].includes(selectedModalidade)) ? 'Título' : 'Tema')}
-                    </label>
-                    <input 
-                      name="title" 
-                      value={formTitle} 
-                      onChange={(e) => setFormTitle(e.target.value)}
-                      required
-                      className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all" 
-                    />
-                  </div>
-                </>
-              ) : (
-                formCategory === 'orientacao' && <input type="hidden" name="title" value="Orientação" />
-              )}
-              
-              {formType === 'event' ? (
-                <>
-                  {formContext !== 'recesso' && !['Ponto Facultativo', 'Feriado'].includes(selectedModalidade) && (
-                    <div className="space-y-1">
-                      <label className="block text-center text-sm font-medium text-foreground">Horário</label>
-                      <TimeRangePickerDropdown 
-                        startTime={formStartTime}
-                        onChangeStartTime={setFormStartTime}
-                        endTime={formEndTime}
-                        onChangeEndTime={setFormEndTime}
-                      />
-                      <input type="hidden" name="startTime" value={formStartTime} />
-                      <input type="hidden" name="endTime" value={formEndTime} />
-                    </div>
-                  )}
-                  
-                  <div className="flex gap-2">
-                    {formContext !== 'recesso' && !NO_CHAMADA_MODALIDADES.includes(selectedModalidade as any) && (
-                      <div className="flex-1 flex flex-col space-y-1">
-                        <label className="block text-center text-sm font-medium text-foreground">Chamada</label>
-                        <textarea name="description" defaultValue={editingItem?.description || ""} rows={2} className="flex-1 w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all resize-none" />
-                      </div>
-                    )}
-                    
-                    <div className={cn(
-                      "flex flex-col space-y-1",
-                      (formContext === 'recesso' || NO_CHAMADA_MODALIDADES.includes(selectedModalidade as any)) ? "w-24 mx-auto items-center" : "w-14 shrink-0"
-                    )}>
-                      <label className="block text-center text-sm font-medium text-foreground">Capa</label>
-                      <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        className="hidden" 
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              const img = new Image();
-                              img.onload = () => {
-                                const canvas = document.createElement('canvas');
-                                const MAX_SIZE = 1600;
-                                let width = img.width;
-                                let height = img.height;
-                                if (width > height) {
-                                  if (width > MAX_SIZE) {
-                                    height *= MAX_SIZE / width;
-                                    width = MAX_SIZE;
-                                  }
-                                } else {
-                                  if (height > MAX_SIZE) {
-                                    width *= MAX_SIZE / height;
-                                    height = MAX_SIZE;
-                                  }
-                                }
-                                canvas.width = width;
-                                canvas.height = height;
-                                const ctx = canvas.getContext('2d');
-                                if (ctx) {
-                                  let sourceCanvas = document.createElement('canvas');
-                                  sourceCanvas.width = img.width;
-                                  sourceCanvas.height = img.height;
-                                  const sourceCtx = sourceCanvas.getContext('2d');
-                                  if (sourceCtx) {
-                                    sourceCtx.drawImage(img, 0, 0);
-                                    let curWidth = img.width;
-                                    let curHeight = img.height;
-                                    while (curWidth * 0.5 > width) {
-                                      const stepCanvas = document.createElement('canvas');
-                                      stepCanvas.width = Math.round(curWidth * 0.5);
-                                      stepCanvas.height = Math.round(curHeight * 0.5);
-                                      const stepCtx = stepCanvas.getContext('2d');
-                                      if (stepCtx) {
-                                        stepCtx.imageSmoothingEnabled = true;
-                                        stepCtx.imageSmoothingQuality = 'high';
-                                        stepCtx.drawImage(sourceCanvas, 0, 0, stepCanvas.width, stepCanvas.height);
-                                      }
-                                      sourceCanvas = stepCanvas;
-                                      curWidth = stepCanvas.width;
-                                      curHeight = stepCanvas.height;
-                                    }
-                                    ctx.imageSmoothingEnabled = true;
-                                    ctx.imageSmoothingQuality = 'high';
-                                    ctx.drawImage(sourceCanvas, 0, 0, width, height);
-                                  } else {
-                                    ctx.imageSmoothingEnabled = true;
-                                    ctx.imageSmoothingQuality = 'high';
-                                    ctx.drawImage(img, 0, 0, width, height);
-                                  }
-                                }
-                                setFormCover(canvas.toDataURL('image/jpeg', 0.85));
-                              };
-                              img.src = reader.result as string;
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => fileInputRef.current?.click()}
-                        className={cn(
-                          "rounded-xl bg-transparent border border-border flex items-center justify-center hover:bg-muted transition-colors text-primary hover:opacity-80 overflow-hidden cursor-pointer",
-                          (formContext === 'recesso' || NO_CHAMADA_MODALIDADES.includes(selectedModalidade as any)) ? "w-24 h-24" : "flex-1 w-full"
-                        )}
-                      >
-                        {formCover ? (
-                          <img src={formCover} alt="Preview" className="w-full h-full object-cover" />
-                        ) : (
-                          <Upload className="w-5 h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                (formCategory !== 'checklist') ? (
-                  <div className="space-y-1">
-                    <label className="block text-center text-sm font-medium text-foreground">
-                      {formCategory === 'responsavel' ? 'Designação' : 'Orientação'}
-                    </label>
+              {/* Chamada & Capa */}
+              <div className="flex gap-2">
+                {formContext !== 'recesso' && !NO_CHAMADA_MODALIDADES.includes(selectedModalidade as any) && (
+                  <div className="flex-1 flex flex-col space-y-1">
+                    <label className="block text-center text-sm font-medium text-foreground">Chamada</label>
                     <textarea 
                       name="description" 
-                      defaultValue={editingItem?.description || ""} 
-                      rows={formCategory === 'orientacao' ? 4 : 2} 
-                      required={formCategory === 'orientacao'}
-                      className="w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all resize-none" 
+                      defaultValue={editingItem?.description || ""}
+                      rows={2} 
+                      className="flex-1 w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all resize-none" 
                     />
                   </div>
-                ) : null
-              )}
+                )}
+
+                <div className={cn(
+                  "flex flex-col space-y-1",
+                  isRecessoOrNoChamada ? "w-24 mx-auto items-center" : "w-14 shrink-0"
+                )}>
+                  <label className="block text-center text-sm font-medium text-foreground">Capa</label>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className={cn(
+                      "rounded-xl bg-transparent border border-border flex items-center justify-center hover:bg-muted transition-colors text-primary hover:opacity-80 overflow-hidden cursor-pointer",
+                      isRecessoOrNoChamada ? "w-24 h-24" : "flex-1 w-full"
+                    )}
+                  >
+                    {formCover ? (
+                      <img src={formCover} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Upload className="w-5 h-5" />
+                    )}
+                  </button>
+                  {formCover && (
+                    <button
+                      type="button"
+                      onClick={() => setFormCover(null)}
+                      className="text-[10px] text-destructive hover:underline text-center cursor-pointer mt-1"
+                    >
+                      Remover
+                    </button>
+                  )}
+                </div>
+              </div>
             </>
           )}
 
-          <div className="pt-2 flex justify-center">
+          {/* Submit Button */}
+          <div className="pt-2">
             <button 
-              type="submit"
-              className="w-2/3 max-w-[240px] py-2.5 bg-primary text-primary-foreground font-bold rounded-xl hover:opacity-90 transition-opacity uppercase tracking-wider text-sm shadow-md cursor-pointer"
+              type="submit" 
+              className="w-full py-3.5 bg-primary text-primary-foreground font-black text-sm uppercase rounded-xl hover:opacity-90 transition-opacity cursor-pointer shadow-md tracking-wider"
             >
-              {editingItem ? 'Salvar' : 'Adicionar'}
+              {editingItem ? 'SALVAR' : 'ADICIONAR'}
             </button>
           </div>
         </form>

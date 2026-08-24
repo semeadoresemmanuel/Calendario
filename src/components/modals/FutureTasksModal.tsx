@@ -34,7 +34,11 @@ export const FutureTasksModal: React.FC<FutureTasksModalProps> = ({
       item.category === 'checklist' && 
       isAfter(startOfDay(item.date), todayStart)
     )
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
+    .sort((a, b) => {
+      const dateDiff = a.date.getTime() - b.date.getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return (a.modalidade || '').localeCompare(b.modalidade || '', 'pt-BR');
+    });
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center pointer-events-none">

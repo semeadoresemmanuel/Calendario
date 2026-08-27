@@ -6,8 +6,8 @@ export const ENCONTRO_MODALIDADES = [
   'Abertura',
   'Encerramento',
   'Especial',
+  'Obra Básica - O Evangelho Segundo o Espiritismo',
   'Obra Básica - O Livro dos Espíritos',
-  'Prática',
   'Reforma Íntima'
 ] as const;
 
@@ -16,10 +16,10 @@ export const ALL_EVENT_MODALIDADES = [
   'Encerramento',
   'Especial',
   'Feriado',
+  'Obra Básica - O Evangelho Segundo o Espiritismo',
   'Obra Básica - O Livro dos Espíritos',
   'Ponto Facultativo',
-  'Prática',
   'Reforma Íntima'
 ] as const;
 
-export const NO_CHAMADA_MODALIDADES = ['Ponto Facultativo', 'Feriado', 'Prática'] as const;
+export const NO_CHAMADA_MODALIDADES = ['Ponto Facultativo', 'Feriado'] as const;

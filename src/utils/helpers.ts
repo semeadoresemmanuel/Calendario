@@ -203,6 +203,7 @@ export const getModalidadeColor = (modalidade?: string): string => {
     case 'Abertura':
     case 'Encerramento':
     case 'Especial':
+    case 'Obra Básica - O Evangelho Segundo o Espiritismo':
     case 'Obra Básica - O Livro dos Espíritos':
     case 'O Livro dos Espíritos':
     case 'Prática':

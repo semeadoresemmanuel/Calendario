@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isMonday, isAfter, endOfDay, addMonths, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 import { getModalidadeColor } from '../../utils/helpers';
+import { downloadCalendarPdf } from '../../utils/pdfGenerator';
 import pdfDownloadIcon from '../../assets/icons/pdf_download.svg';
 import { CalendarItem } from '../../types';
 
@@ -20,6 +21,22 @@ export const YearView: React.FC<YearViewProps> = ({
   onSelectMonth,
 }) => {
   const currentYear = yearMonths[0] ? format(yearMonths[0], 'yyyy') : '2026';
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (isGeneratingPdf) return;
+    try {
+      setIsGeneratingPdf(true);
+      await downloadCalendarPdf({
+        mode: darkMode ? 'dark' : 'light',
+        year: currentYear,
+      });
+    } catch (err) {
+      console.error('Erro ao gerar PDF do calendário:', err);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   return (
     <>
@@ -95,28 +112,26 @@ export const YearView: React.FC<YearViewProps> = ({
       </div>
       
       <div className="mt-8 mb-4 flex justify-center w-full">
-        {(() => {
-          const pdfName = darkMode ? "Calendário 2026 (Dark Mode).pdf" : "Calendário 2026 (Light Mode).pdf";
-          const pdfUrl = darkMode ? "/calendario_2026_dark.pdf" : "/calendario_2026_light.pdf";
-          return (
-            <a 
-              href={pdfUrl} 
-              download={pdfName} 
-              className="group flex flex-col items-center gap-3 cursor-pointer w-fit mx-auto"
-            >
-              <img 
-                src={pdfDownloadIcon} 
-                alt="Download PDF" 
-                className="w-8 h-8 theme-icon-green transition-all duration-300 group-hover:drop-shadow-[0_0_8px_var(--primary)] group-active:drop-shadow-[0_0_8px_var(--primary)]" 
-              />
-              <div 
-                className="flex items-center justify-center px-6 py-2.5 bg-transparent border border-primary rounded-full transition-all duration-300 group-hover:shadow-[0_0_15px_var(--primary)] group-active:shadow-[0_0_15px_var(--primary)] group-hover:bg-primary/10"
-              >
-                <span className="text-xs font-bold uppercase tracking-wider text-primary">BAIXAR CALENDÁRIO</span>
-              </div>
-            </a>
-          );
-        })()}
+        <button 
+          type="button"
+          onClick={handleDownloadPdf}
+          disabled={isGeneratingPdf}
+          className="group flex flex-col items-center gap-3 cursor-pointer w-fit mx-auto disabled:opacity-60 transition-opacity"
+          title="Baixar Calendário 2026 em PDF"
+        >
+          <img 
+            src={pdfDownloadIcon} 
+            alt="Download PDF" 
+            className="w-8 h-8 theme-icon-green transition-all duration-300 group-hover:drop-shadow-[0_0_8px_var(--primary)] group-active:drop-shadow-[0_0_8px_var(--primary)]" 
+          />
+          <div 
+            className="flex items-center justify-center px-6 py-2.5 bg-transparent border border-primary rounded-full transition-all duration-300 group-hover:shadow-[0_0_15px_var(--primary)] group-active:shadow-[0_0_15px_var(--primary)] group-hover:bg-primary/10"
+          >
+            <span className="text-xs font-bold uppercase tracking-wider text-primary">
+              {isGeneratingPdf ? 'GERANDO PDF...' : 'BAIXAR CALENDÁRIO'}
+            </span>
+          </div>
+        </button>
       </div>
     </>
   );

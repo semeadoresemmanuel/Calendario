@@ -1,17 +1,16 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Upload, ChevronDown } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isMonday } from 'date-fns';
+import { X, Upload, ChevronDown, Trash } from 'lucide-react';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 import { TimeRangePickerDropdown } from '../ui/TimePickers';
-import { CalendarItem, ItemType, ViewMode } from '../../types';
+import { CalendarItem, ItemType } from '../../types';
 import { 
   TASK_DEPARTMENTS, 
   RECESSO_MODALIDADES, 
   ENCONTRO_MODALIDADES, 
-  ALL_EVENT_MODALIDADES,
-  NO_CHAMADA_MODALIDADES 
+  ALL_EVENT_MODALIDADES 
 } from '../../constants/modalidades';
 import { TEAM_MEMBERS } from '../../constants/members';
 
@@ -39,7 +38,6 @@ interface ItemFormModalProps {
   setFormStartTime: (time: string) => void;
   formEndTime: string;
   setFormEndTime: (time: string) => void;
-  viewMode: ViewMode;
   onSave: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
@@ -64,14 +62,13 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   setFormStartTime,
   formEndTime,
   setFormEndTime,
-  viewMode,
   onSave,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDaySelectOpen, setIsDaySelectOpen] = useState(false);
-  const [isMonthSelectOpen, setIsMonthSelectOpen] = useState(false);
   const [isModalidadeSelectOpen, setIsModalidadeSelectOpen] = useState(false);
   const [isMemberSelectOpen, setIsMemberSelectOpen] = useState(false);
+  const [isDeleteCoverConfirmOpen, setIsDeleteCoverConfirmOpen] = useState(false);
 
   // Local state for Day/Month task picker dialog
   const [tempDay, setTempDay] = useState<number | null>(selectedDate ? selectedDate.getDate() : null);
@@ -164,8 +161,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     };
     reader.readAsDataURL(file);
   };
-
-  const isRecessoOrNoChamada = formContext === 'recesso' || NO_CHAMADA_MODALIDADES.includes(selectedModalidade as any);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
@@ -491,158 +486,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
           ) : (
             // Event / Recesso form fields
             <>
-              {/* Data: Monday selector / Month selector */}
-              <div className="space-y-1 relative">
-                <div className="flex gap-1.5">
-                  {/* Day Selector */}
-                  <div className="relative flex-[1]">
-                    <button
-                      type="button"
-                      disabled={viewMode === 'DAY'}
-                      onClick={() => {
-                        setIsDaySelectOpen(!isDaySelectOpen);
-                        setIsMonthSelectOpen(false);
-                      }}
-                      className={cn(
-                        "w-full p-2 flex items-center justify-between rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm h-[42px]",
-                        isDaySelectOpen && "border-primary ring-1 ring-primary/20"
-                      )}
-                    >
-                      <span className="flex-1 text-center font-bold">
-                        {selectedDate ? selectedDate.getDate().toString().padStart(2, '0') : '01'}
-                      </span>
-                      <ChevronDown className={cn("w-3.5 h-3.5 text-foreground/50 transition-transform", isDaySelectOpen && "rotate-180")} />
-                    </button>
-
-                    <AnimatePresence>
-                      {isDaySelectOpen && (
-                        <>
-                          <div className="fixed inset-0 z-30" onClick={() => setIsDaySelectOpen(false)} />
-                          <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute left-0 right-0 z-40 mt-2 bg-card border border-border rounded-2xl shadow-xl max-h-48 overflow-y-auto min-w-[55px]"
-                          >
-                            <div className="p-1 flex flex-col gap-1">
-                              {selectedDate && eachDayOfInterval({
-                                start: startOfMonth(selectedDate),
-                                end: endOfMonth(selectedDate)
-                              }).filter(d => isMonday(d)).map(date => {
-                                const d = date.getDate();
-                                return (
-                                  <button
-                                    key={d}
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedDate(date);
-                                      setIsDaySelectOpen(false);
-                                    }}
-                                    className={cn(
-                                      "p-1.5 text-xs rounded-lg transition-colors text-center font-medium cursor-pointer",
-                                      selectedDate?.getDate() === d 
-                                        ? "bg-primary text-primary-foreground font-bold" 
-                                        : "hover:bg-primary/10 text-foreground"
-                                    )}
-                                  >
-                                    {d.toString().padStart(2, '0')}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </motion.div>
-                        </>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Month Selector */}
-                  <div className="relative flex-[1.3]">
-                    <button
-                      type="button"
-                      disabled={viewMode === 'DAY'}
-                      onClick={() => {
-                        setIsMonthSelectOpen(!isMonthSelectOpen);
-                        setIsDaySelectOpen(false);
-                      }}
-                      className={cn(
-                        "w-full p-2 flex items-center justify-between rounded-xl bg-card text-foreground border border-border focus:border-primary outline-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm h-[42px]",
-                        isMonthSelectOpen && "border-primary ring-1 ring-primary/20"
-                      )}
-                    >
-                      <span className="flex-1 text-center font-bold capitalize">
-                        {selectedDate ? format(selectedDate, 'MMM', { locale: ptBR }) : 'Jan'}
-                      </span>
-                      <ChevronDown className={cn("w-3.5 h-3.5 text-foreground/50 transition-transform", isMonthSelectOpen && "rotate-180")} />
-                    </button>
-
-                    <AnimatePresence>
-                      {isMonthSelectOpen && (
-                        <>
-                          <div className="fixed inset-0 z-30" onClick={() => setIsMonthSelectOpen(false)} />
-                          <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute left-0 right-0 z-40 mt-2 bg-card border border-border rounded-2xl shadow-xl max-h-48 overflow-y-auto min-w-[70px]"
-                          >
-                            <div className="p-1 flex flex-col gap-1">
-                              {[
-                                { value: 0, label: 'Jan' },
-                                { value: 1, label: 'Fev' },
-                                { value: 2, label: 'Mar' },
-                                { value: 3, label: 'Abr' },
-                                { value: 4, label: 'Mai' },
-                                { value: 5, label: 'Jun' },
-                                { value: 6, label: 'Jul' },
-                                { value: 7, label: 'Ago' },
-                                { value: 8, label: 'Set' },
-                                { value: 9, label: 'Out' },
-                                { value: 10, label: 'Nov' },
-                                { value: 11, label: 'Dez' }
-                              ].map(m => (
-                                <button
-                                  key={m.value}
-                                  type="button"
-                                  onClick={() => {
-                                    if (selectedDate) {
-                                      const currentMondays = eachDayOfInterval({
-                                        start: startOfMonth(selectedDate),
-                                        end: endOfMonth(selectedDate)
-                                      }).filter(d => isMonday(d));
-                                      const currentMondayIdx = currentMondays.findIndex(d => format(d, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'));
-                                      
-                                      const newMonthStart = new Date(selectedDate.getFullYear(), m.value, 1);
-                                      const newMondays = eachDayOfInterval({
-                                        start: startOfMonth(newMonthStart),
-                                        end: endOfMonth(newMonthStart)
-                                      }).filter(d => isMonday(d));
-                                      
-                                      const targetIdx = currentMondayIdx !== -1 ? currentMondayIdx : 0;
-                                      const nextDate = newMondays[targetIdx] || newMondays[newMondays.length - 1] || newMonthStart;
-                                      setSelectedDate(nextDate);
-                                    }
-                                    setIsMonthSelectOpen(false);
-                                  }}
-                                  className={cn(
-                                    "p-1.5 text-xs rounded-lg transition-colors text-center font-medium cursor-pointer",
-                                    selectedDate?.getMonth() === m.value 
-                                      ? "bg-primary text-primary-foreground font-bold" 
-                                      : "hover:bg-primary/10 text-foreground"
-                                  )}
-                                >
-                                  {m.label}
-                                </button>
-                              ))}
-                            </div>
-                          </motion.div>
-                        </>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              </div>
-
               {/* Modalidade / Tipo Dropdown */}
               <div className="space-y-1 relative">
                 <label className="block text-center text-sm font-medium text-foreground">
@@ -688,13 +531,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                                   setSelectedModalidade(opt);
                                 }
                                 setIsModalidadeSelectOpen(false);
-
-                                // Auto-fill standard practice title
-                                if (opt === 'Prática') {
-                                  setFormTitle('Atividades no Centro');
-                                } else if (prev === 'Prática' && formTitle === 'Atividades no Centro') {
-                                  setFormTitle('');
-                                }
 
                                 if (['Ponto Facultativo', 'Feriado'].includes(opt)) {
                                   setFormCover(null);
@@ -746,25 +582,10 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 </div>
               )}
 
-              {/* Chamada & Capa */}
-              <div className="flex gap-2">
-                {formContext !== 'recesso' && !NO_CHAMADA_MODALIDADES.includes(selectedModalidade as any) && (
-                  <div className="flex-1 flex flex-col space-y-1">
-                    <label className="block text-center text-sm font-medium text-foreground">Chamada</label>
-                    <textarea 
-                      name="description" 
-                      defaultValue={editingItem?.description || ""}
-                      rows={2} 
-                      className="flex-1 w-full p-2.5 text-center rounded-xl bg-transparent border border-border focus:border-primary outline-none transition-all resize-none" 
-                    />
-                  </div>
-                )}
-
-                <div className={cn(
-                  "flex flex-col space-y-1",
-                  isRecessoOrNoChamada ? "w-24 mx-auto items-center" : "w-14 shrink-0"
-                )}>
-                  <label className="block text-center text-sm font-medium text-foreground">Capa</label>
+              {/* Capa */}
+              <div className="flex flex-col items-center space-y-1 w-full pt-1">
+                <label className="block text-center text-sm font-medium text-foreground">Capa</label>
+                <div className="relative">
                   <input 
                     type="file" 
                     ref={fileInputRef} 
@@ -772,27 +593,28 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                     accept="image/*"
                     onChange={handleImageChange}
                   />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className={cn(
-                      "rounded-xl bg-transparent border border-border flex items-center justify-center hover:bg-muted transition-colors text-primary hover:opacity-80 overflow-hidden cursor-pointer",
-                      isRecessoOrNoChamada ? "w-24 h-24" : "flex-1 w-full"
-                    )}
-                  >
-                    {formCover ? (
-                      <img src={formCover} alt="Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <Upload className="w-5 h-5" />
-                    )}
-                  </button>
-                  {formCover && (
+                  {formCover ? (
                     <button
                       type="button"
-                      onClick={() => setFormCover(null)}
-                      className="text-[10px] text-destructive hover:underline text-center cursor-pointer mt-1"
+                      onClick={() => setIsDeleteCoverConfirmOpen(true)}
+                      className="group relative w-24 h-24 rounded-2xl border border-border overflow-hidden cursor-pointer"
+                      title="Clique para remover a capa"
                     >
-                      Remover
+                      <img src={formCover} alt="Preview" className="w-full h-full object-cover" />
+                      
+                      {/* Overlay translúcido com X centralizado ao passar o mouse ou clicar */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center backdrop-blur-[1px]">
+                        <X className="w-8 h-8 text-white/90 stroke-[2.5]" />
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-24 h-24 rounded-2xl bg-transparent border border-border flex items-center justify-center hover:bg-muted transition-colors text-primary hover:opacity-80 overflow-hidden cursor-pointer"
+                      title="Adicionar capa"
+                    >
+                      <Upload className="w-6 h-6" />
                     </button>
                   )}
                 </div>
@@ -804,12 +626,63 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
           <div className="pt-2">
             <button 
               type="submit" 
-              className="w-full py-3.5 bg-primary text-primary-foreground font-black text-sm uppercase rounded-xl hover:opacity-90 transition-opacity cursor-pointer shadow-md tracking-wider"
+              disabled={!selectedDate}
+              className={cn(
+                "w-full py-3.5 bg-primary text-primary-foreground font-black text-sm uppercase rounded-xl hover:opacity-90 transition-opacity cursor-pointer shadow-md tracking-wider",
+                !selectedDate && "opacity-50 cursor-not-allowed"
+              )}
             >
               {editingItem ? 'SALVAR' : 'ADICIONAR'}
             </button>
           </div>
         </form>
+
+        {/* Cover Delete Confirmation Dialog */}
+        <AnimatePresence>
+          {isDeleteCoverConfirmOpen && (
+            <>
+              <div 
+                className="fixed inset-0 z-[240] bg-black/50 backdrop-blur-sm pointer-events-auto" 
+                onClick={() => setIsDeleteCoverConfirmOpen(false)} 
+              />
+              <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 pointer-events-none">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="relative bg-card border border-border w-full max-w-sm rounded-[2rem] p-6 sm:p-8 shadow-2xl text-center pointer-events-auto"
+                >
+                  <div className="flex items-center justify-center mx-auto mb-5">
+                    <Trash className="w-8 h-8 text-destructive" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold mb-6 text-foreground uppercase tracking-wide">
+                    REMOVER CAPA?
+                  </h3>
+                  <div className="flex gap-3">
+                    <button 
+                      type="button"
+                      onClick={() => setIsDeleteCoverConfirmOpen(false)}
+                      className="flex-1 py-3 px-4 rounded-2xl bg-destructive text-destructive-foreground hover:opacity-90 font-bold shadow-lg shadow-destructive/20 transition-all cursor-pointer"
+                    >
+                      NÃO
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setFormCover(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                        setIsDeleteCoverConfirmOpen(false);
+                      }}
+                      className="flex-1 py-3 px-4 rounded-2xl bg-primary text-primary-foreground hover:opacity-90 font-bold shadow-lg shadow-primary/20 transition-all cursor-pointer"
+                    >
+                      SIM
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            </>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );

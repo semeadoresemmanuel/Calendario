@@ -1,0 +1,52 @@
+export interface DefaultScheduleItem {
+  date: string; // YYYY-MM-DD
+  title: string;
+  modalidade: string;
+}
+
+export const BASE_2026_SCHEDULE: DefaultScheduleItem[] = [
+  { date: '2026-02-02', title: 'De Volta para o Futuro: Análise do Passado, Ajustes no Presente e Projeções para o Futuro - Parte I', modalidade: 'Abertura' },
+  { date: '2026-02-09', title: 'De Volta para o Futuro: Análise do Passado, Ajustes no Presente e Projeções para o Futuro - Parte II', modalidade: 'Abertura' },
+  { date: '2026-02-16', title: 'Segunda-Feira de Carnaval', modalidade: 'Ponto Facultativo' },
+  { date: '2026-02-23', title: 'Parte II, Capítulo IV (Da Pluralidade das Existências) - Parecenças Físicas e Morais', modalidade: 'Obra Básica - O Livro dos Espíritos' },
+  { date: '2026-03-02', title: 'Servos para o Trabalho na Edificação do Material e do Intelecto-Moral', modalidade: 'Reforma Íntima' },
+  { date: '2026-03-09', title: 'As Guerras Atuais e a Transição Planetária', modalidade: 'Especial' },
+  { date: '2026-03-16', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-03-23', title: 'Parte II, Capítulo IV (Da Pluralidade das Existências) - Ideias Inatas', modalidade: 'Obra Básica - O Livro dos Espíritos' },
+  { date: '2026-03-30', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-04-06', title: 'Parte II, Capítulo V (Considerações sobre a Pluralidade das Existências)', modalidade: 'Obra Básica - O Livro dos Espíritos' },
+  { date: '2026-04-13', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-04-20', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-04-27', title: 'Planejamento Reencarnatório e Familiar', modalidade: 'Especial' },
+  { date: '2026-05-04', title: 'A Jornada de Dentro: Conhecer, Transformar e Crescer', modalidade: 'Reforma Íntima' },
+  { date: '2026-05-11', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-05-18', title: 'Espiritismo e Inteligência Artificial', modalidade: 'Especial' },
+  { date: '2026-05-25', title: 'Parte II, Capítulo VI (Da Vida Espírita) - Espíritos Errantes', modalidade: 'Obra Básica - O Livro dos Espíritos' },
+  { date: '2026-06-01', title: 'Levantamento de Ações e Necessidades do Centro Espírita Emmanuel', modalidade: 'Reforma Íntima' },
+  { date: '2026-06-08', title: 'Parte II, Capítulo VI (Da Vida Espírita) - Mundos Transitórios', modalidade: 'Obra Básica - O Livro dos Espíritos' },
+  { date: '2026-06-15', title: 'Qualidade de Vida nos Tempos Atuais', modalidade: 'Reforma Íntima' },
+  { date: '2026-06-22', title: 'Excessos e Desequilíbrios do Estilo de Vida', modalidade: 'Especial' },
+  { date: '2026-06-29', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-07-06', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-07-13', title: 'Parte II, Capítulo VI (Da Vida Espírita) - Percepções, Sensações e Sofrimentos dos Espíritos', modalidade: 'Obra Básica - O Livro dos Espíritos' },
+  { date: '2026-07-20', title: 'A Definir', modalidade: 'Reforma Íntima' },
+  { date: '2026-07-27', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-08-03', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-08-10', title: 'Parte II, Capítulo VI (Da Vida Espírita) - Ensaio Teórico da Sensação nos Espíritos', modalidade: 'Obra Básica - O Livro dos Espíritos' },
+  { date: '2026-08-17', title: 'Prioridades e Decisões', modalidade: 'Reforma Íntima' },
+  { date: '2026-08-24', title: 'A Definir', modalidade: 'Especial' },
+  { date: '2026-08-31', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-09-07', title: 'Dia da Independência do Brasil', modalidade: 'Feriado' },
+  { date: '2026-09-14', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-09-21', title: 'Parte II, Capítulo VI (Da Vida Espírita) - Escolha das Provas', modalidade: 'Obra Básica - O Livro dos Espíritos' },
+  { date: '2026-09-28', title: 'A Definir', modalidade: 'Reforma Íntima' },
+  { date: '2026-10-05', title: 'A Definir', modalidade: 'Especial' },
+  { date: '2026-10-12', title: 'Dia das Crianças | Nossa Senhora Aparecida', modalidade: 'Feriado' },
+  { date: '2026-10-19', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-10-26', title: 'Parte II, Capítulo VI (Da Vida Espírita) - As Relações no Além-Túmulo', modalidade: 'Obra Básica - O Livro dos Espíritos' },
+  { date: '2026-11-02', title: 'Finados', modalidade: 'Feriado' },
+  { date: '2026-11-09', title: 'A Definir', modalidade: 'Especial' },
+  { date: '2026-11-16', title: 'Atividades no Centro', modalidade: 'Obra Básica - O Evangelho Segundo o Espiritismo' },
+  { date: '2026-11-23', title: 'Parte II, Capítulo VI (Da Vida Espírita) - Relações de Simpatia e de Antipatia entre os Espíritos', modalidade: 'Obra Básica - O Livro dos Espíritos' },
+  { date: '2026-11-30', title: 'Cerimônia do Oscar Semeadores 2026', modalidade: 'Encerramento' }
+];

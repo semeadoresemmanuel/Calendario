@@ -174,7 +174,7 @@ body {
 }
 
 .date-text {
-  font-size: 9.5px;
+  font-size: 6.5px;
   font-weight: 700;
   line-height: 1;
 }
@@ -236,7 +236,7 @@ body {
 .modalidade-cell {
   justify-content: center;
   white-space: nowrap;
-  font-size: 7.2px;
+  font-size: 6.5px;
   text-align: center;
 }
 

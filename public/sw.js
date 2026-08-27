@@ -1,26 +1,30 @@
-// Service Worker for Cronograma Semeadores
-const CACHE_NAME = 'semeadores-cronograma-v16';
-const ASSETS_TO_CACHE = [
+// Service Worker for Cronograma Semeadores (PWA Offline First)
+const CACHE_NAME = 'semeadores-cronograma-v17';
+
+const STATIC_PRECACHE = [
   '/',
   '/index.html',
   '/favicon.svg',
+  '/manifest.json',
+  '/calendario_2026_light.pdf',
+  '/calendario_2026_dark.pdf'
 ];
 
-// Install Event: Cache initial static assets
-self.addEventListener('install', function(event) {
+// Install Event: Pre-cache essential assets
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(ASSETS_TO_CACHE);
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_PRECACHE);
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activate Event: Clean up old caches
-self.addEventListener('activate', function(event) {
+// Activate Event: Clean up stale caches immediately
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(function(cacheNames) {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map(function(cacheName) {
+        cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
@@ -30,14 +34,15 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-self.addEventListener('fetch', function(event) {
-  // Only intercept GET requests
+// Fetch Event: Offline-first with background cache updating
+self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') {
     return;
   }
 
-  // Do not intercept Vite/development files to avoid net::ERR_FAILED in dev mode
   const url = event.request.url;
+
+  // Do not intercept Vite dev server / HMR requests
   if (
     url.includes('/@vite/') || 
     url.includes('/@fs/') || 
@@ -50,52 +55,59 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // Only handle HTTP/HTTPS requests from our origin
+  // Handle cross-origin requests (e.g., Firestore API handles its own cache via persistentLocalCache)
   if (!url.startsWith(self.location.origin)) {
     return;
   }
 
   event.respondWith(
-    caches.match(event.request).then(function(cachedResponse) {
+    caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Fetch updated version in the background
-        fetch(event.request).then(function(networkResponse) {
-          if (networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then(function(cache) {
-              cache.put(event.request, networkResponse);
-            });
-          }
-        }).catch(() => {/* Ignore network errors when offline */});
-        
+        // Fetch and update cache in background (Stale-While-Revalidate)
+        fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const responseClone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseClone);
+              });
+            }
+          })
+          .catch(() => {/* Offline: silence network error */});
+
         return cachedResponse;
       }
 
-      return fetch(event.request).then(function(networkResponse) {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      }).catch(function() {
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
-      });
+      // Not in cache: fetch from network and cache for next time
+      return fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // If offline and request is a navigation, fallback to root
+          if (event.request.mode === 'navigate') {
+            return caches.match('/') || caches.match('/index.html');
+          }
+        });
     })
   );
 });
 
-// Notification click event
-self.addEventListener('notificationclick', function(event) {
+// Notification click handler
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || '/';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (let i = 0; i < clientList.length; i++) {
-        let client = clientList[i];
+        const client = clientList[i];
         if (client.url.startsWith(self.location.origin) && 'focus' in client) {
           return client.focus();
         }

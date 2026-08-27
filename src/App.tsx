@@ -29,6 +29,7 @@ import { BirthdayModal } from './components/modals/BirthdayModal';
 import { ImageViewerModal } from './components/modals/ImageViewerModal';
 import { ItemFormModal } from './components/modals/ItemFormModal';
 import { FutureTasksModal } from './components/modals/FutureTasksModal';
+import { CalendarPdfTemplate } from './components/pdf/CalendarPdfTemplate';
 import { YearView } from './components/views/YearView';
 import { MonthDayView } from './components/views/MonthDayView';
 import { TasksView } from './components/views/TasksView';
@@ -545,10 +546,26 @@ export default function App() {
           setFormStartTime={setFormStartTime}
           formEndTime={formEndTime}
           setFormEndTime={setFormEndTime}
-          viewMode={viewMode}
           onSave={handleSaveItem}
         />
       </AnimatePresence>
+
+      {/* Hidden PDF Templates for Dynamic Generation */}
+      <div 
+        aria-hidden="true" 
+        style={{ 
+          position: 'absolute', 
+          width: '0px', 
+          height: '0px', 
+          overflow: 'hidden', 
+          opacity: 0, 
+          pointerEvents: 'none', 
+          zIndex: -9999 
+        }}
+      >
+        <CalendarPdfTemplate items={items} mode="light" containerId="pdf-calendar-template-light" />
+        <CalendarPdfTemplate items={items} mode="dark" containerId="pdf-calendar-template-dark" />
+      </div>
     </div>
   );
 }

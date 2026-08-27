@@ -48,14 +48,14 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           <button 
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 px-4 rounded-2xl bg-muted hover:bg-muted-foreground/10 font-bold transition-all cursor-pointer"
+            className="flex-1 py-3 px-4 rounded-2xl bg-destructive text-destructive-foreground hover:opacity-90 font-bold shadow-lg shadow-destructive/20 transition-all cursor-pointer"
           >
             NÃO
           </button>
           <button 
             type="button"
             onClick={() => onConfirmDelete(itemToDeleteId)}
-            className="flex-1 py-3 px-4 rounded-2xl bg-destructive text-destructive-foreground hover:opacity-90 font-bold shadow-lg shadow-destructive/20 transition-all cursor-pointer"
+            className="flex-1 py-3 px-4 rounded-2xl bg-primary text-primary-foreground hover:opacity-90 font-bold shadow-lg shadow-primary/20 transition-all cursor-pointer"
           >
             SIM
           </button>

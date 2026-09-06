@@ -27,7 +27,7 @@ export const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="relative z-10 mb-2 md:mb-6 p-2 text-[#f7f7f7ff] cursor-pointer"
+        className="relative z-10 mb-2 md:mb-6 p-2 text-[#F7F7F7] cursor-pointer"
         title="Fechar"
       >
         <X className="w-8 h-8 md:w-10 md:h-10 drop-shadow-md" />
@@ -47,7 +47,7 @@ export const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
         href={selectedImage.url} 
         download={`${selectedImage.title.toLowerCase().replace(/\s+/g, '')}.png`}
         onClick={onClose}
-        className="relative z-10 mt-2 md:mt-6 p-2 text-[#f7f7f7ff] cursor-pointer"
+        className="relative z-10 mt-2 md:mt-6 p-2 text-[#F7F7F7] cursor-pointer"
         title="Baixar Imagem (PNG)"
       >
         <Download className="w-8 h-8 md:w-10 md:h-10 drop-shadow-md" />

@@ -75,12 +75,12 @@ export const MonthDayView: React.FC<MonthDayViewProps> = ({
                 {viewMode === 'DAY' ? (
                   <div className="text-5xl font-black tracking-tighter font-display flex items-baseline">
                     <span style={{ color: dateColor }}>{format(date, 'dd')}</span>
-                    <span className={cn("text-2xl ml-1", darkMode ? "text-[#f7f7f7ff]" : "text-[#121212ff]")}>/{format(date, 'MM')}</span>
+                    <span className={cn("text-2xl ml-1", darkMode ? "text-[#F7F7F7]" : "text-[#121212]")}>/{format(date, 'MM')}</span>
                   </div>
                 ) : (
                   <>
                     <span className="text-4xl font-black tracking-tighter font-display" style={{ color: dateColor }}>{format(date, 'dd')}</span>
-                    <span className={cn("font-bold uppercase tracking-widest text-xs ml-0.5", darkMode ? "text-[#f7f7f7ff]" : "text-[#121212ff]")}>
+                    <span className={cn("font-bold uppercase tracking-widest text-xs ml-0.5", darkMode ? "text-[#F7F7F7]" : "text-[#121212]")}>
                       /{format(date, 'MM')}
                     </span>
                   </>
@@ -150,7 +150,7 @@ export const MonthDayView: React.FC<MonthDayViewProps> = ({
                   return (
                     <div className={cn(
                       "p-6 rounded-2xl text-xs uppercase tracking-widest font-bold text-center",
-                      darkMode ? "bg-[#262626] text-[#C5C5C5]" : "bg-[#e2e2e2] text-[#121212ff]"
+                      darkMode ? "bg-[#262626] text-[#C5C5C5]" : "bg-[#e2e2e2] text-[#121212]"
                     )}>
                       Livre
                     </div>
@@ -211,7 +211,7 @@ export const MonthDayView: React.FC<MonthDayViewProps> = ({
                       {(item.startTime || item.endTime) && (
                         <div className={cn(
                           "flex items-center gap-2 px-3 h-8 rounded-full text-xs font-medium border-[0.5px] bg-transparent whitespace-nowrap",
-                          darkMode ? "border-zinc-600 text-[#f7f7f7ff]" : "border-zinc-500 text-black"
+                          darkMode ? "border-zinc-600 text-[#F7F7F7]" : "border-zinc-500 text-[#121212]"
                         )}>
                           <Clock className="w-3.5 h-3.5 text-primary" />
                           <span>{item.startTime}{item.startTime && item.endTime ? ' - ' : ''}{item.endTime}</span>

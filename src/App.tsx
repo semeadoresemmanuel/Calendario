@@ -148,10 +148,6 @@ export default function App() {
     }
   }, [darkMode]);
 
-  useEffect(() => { 
-    localStorage.setItem('smd_view', JSON.stringify(viewMode)); 
-  }, [viewMode]);
-
   // Derived Date Collections
   const displayDates = useMemo(() => {
     try {
@@ -339,7 +335,7 @@ export default function App() {
                       "px-4 h-full text-[10px] sm:text-[11px] font-black rounded-full transition-all relative cursor-pointer select-none uppercase tracking-wider flex items-center justify-center",
                       viewMode === mode 
                         ? "text-primary" 
-                        : (darkMode ? "text-white hover:text-white/80" : "text-black hover:text-black/80")
+                        : (darkMode ? "text-[#F7F7F7] hover:text-[#F7F7F7]/80" : "text-[#121212] hover:text-[#121212]/80")
                     )}
                   >
                     {viewMode === mode && (

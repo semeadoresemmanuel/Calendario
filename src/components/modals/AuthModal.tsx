@@ -85,7 +85,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   setAdminPassword(e.target.value);
                   if (authError) setAuthError(false);
                 }}
-                className="w-full p-3 pr-10 rounded-xl bg-muted/50 border border-border text-foreground italic outline-none focus:border-primary transition-colors text-center"
+                className="w-full py-3 px-10 rounded-xl bg-muted/50 border border-border text-foreground italic outline-none focus:border-primary transition-colors text-center"
                 autoFocus
               />
               <button

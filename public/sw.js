@@ -1,13 +1,11 @@
 // Service Worker for Cronograma Semeadores (PWA Offline First)
-const CACHE_NAME = 'semeadores-cronograma-v17';
+const CACHE_NAME = 'semeadores-cronograma-v18';
 
 const STATIC_PRECACHE = [
   '/',
   '/index.html',
   '/favicon.svg',
-  '/manifest.json',
-  '/calendario_2026_light.pdf',
-  '/calendario_2026_dark.pdf'
+  '/manifest.json'
 ];
 
 // Install Event: Pre-cache essential assets

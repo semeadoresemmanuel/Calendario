@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Upload, ChevronDown, Trash } from 'lucide-react';
 import { format } from 'date-fns';
@@ -73,6 +73,16 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   // Local state for Day/Month task picker dialog
   const [tempDay, setTempDay] = useState<number | null>(selectedDate ? selectedDate.getDate() : null);
   const [tempMonth, setTempMonth] = useState<number | null>(selectedDate ? selectedDate.getMonth() : null);
+
+  useEffect(() => {
+    if (selectedDate) {
+      setTempDay(selectedDate.getDate());
+      setTempMonth(selectedDate.getMonth());
+    } else {
+      setTempDay(null);
+      setTempMonth(null);
+    }
+  }, [selectedDate, isOpen]);
 
   if (!isOpen) return null;
 

@@ -230,3 +230,20 @@ export const isLocalhost = (hostname: string): boolean => {
     hostname.endsWith('.local')
   );
 };
+
+export const getNearestMonday = (fromDate: Date = new Date()): Date => {
+  const day = fromDate.getDay(); // 0: Dom, 1: Seg, 2: Ter, 3: Qua, 4: Qui, 5: Sex, 6: Sáb
+  let diff = 0;
+  if (day === 0) {
+    diff = 1; // Domingo -> próxima Segunda (+1 dia)
+  } else if (day >= 1 && day <= 4) {
+    diff = 1 - day; // Seg (0), Ter (-1), Qua (-2), Qui (-3) -> segunda-feira desta semana
+  } else {
+    diff = 8 - day; // Sex (+3), Sáb (+2) -> próxima Segunda
+  }
+  const result = new Date(fromDate);
+  result.setDate(fromDate.getDate() + diff);
+  result.setHours(0, 0, 0, 0);
+  return result;
+};
+

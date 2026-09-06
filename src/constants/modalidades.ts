@@ -21,5 +21,3 @@ export const ALL_EVENT_MODALIDADES = [
   'Ponto Facultativo',
   'Reforma Íntima'
 ] as const;
-
-export const NO_CHAMADA_MODALIDADES = ['Ponto Facultativo', 'Feriado'] as const;

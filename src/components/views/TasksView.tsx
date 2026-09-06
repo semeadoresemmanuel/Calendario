@@ -4,6 +4,7 @@ import { Clock, Pencil, Trash } from 'lucide-react';
 import { startOfWeek, isSameDay } from 'date-fns';
 import { cn } from '../../lib/utils';
 import { formatDescription } from '../../utils/formatters';
+import { getNearestMonday } from '../../utils/helpers';
 import eyeIcon from '../../assets/icons/eye.svg';
 import { CalendarItem } from '../../types';
 
@@ -78,7 +79,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
         {isAdmin && (
           <div className="flex justify-center items-center gap-3 mb-4">
             <button 
-              onClick={() => onOpenAddModal(activeTaskDate, undefined, 'task', 'checklist')} 
+              onClick={() => onOpenAddModal(getNearestMonday(), undefined, 'task', 'checklist')} 
               className={cn(
                 "flex items-center h-[30px] rounded-full transition-all duration-200 hover:scale-105 cursor-pointer font-black text-[10px] sm:text-[11px] uppercase tracking-wider border border-border/40 shadow-inner pl-0 pr-4",
                 darkMode ? "bg-[#262626] text-primary" : "bg-[#E2E2E2] text-primary"

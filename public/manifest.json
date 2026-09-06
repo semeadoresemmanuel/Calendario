@@ -5,10 +5,20 @@
   "start_url": "/",
   "scope": "/",
   "display": "fullscreen",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
   "orientation": "portrait",
-  "background_color": "#f7f7f7",
-  "theme_color": "#006400",
+  "background_color": "#F7F7F7",
+  "theme_color": "#F7F7F7",
   "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/favicon.svg",
